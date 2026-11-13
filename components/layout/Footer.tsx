@@ -80,7 +80,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-10 pt-6 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} BARA. Tous droits réservés.
+          © 2026 BARA. Tous droits réservés.
         </div>
       </div>
     </footer>
