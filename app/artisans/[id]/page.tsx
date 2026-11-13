@@ -23,7 +23,10 @@ export default async function ArtisanPage({
     notFound()
   }
 
-  return (
-    // ton JSX ici
-  )
-}
+ return (
+  <div>
+    {/* Ici ton contenu original de la page artisan */}
+    <h1>{artisan.name}</h1>
+    {/* etc. */}
+  </div>
+)
