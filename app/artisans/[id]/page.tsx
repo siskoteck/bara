@@ -1,9 +1,5 @@
 import { notFound } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase'
-
-export const dynamic = 'force-dynamic'
-export const fetchCache = 'force-no-store'
-
 export default async function ArtisanPage({
   params,
 }: {
