@@ -1,20 +1,29 @@
 import { notFound } from 'next/navigation'
-import { supabase } from '@/lib/supabase' // garde ton chemin d'import actuel
+import { createSupabaseClient } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic' // la page est générée à chaque visite, pas au build
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 
-export default async function ArtisanPage({ params }) {
+export default async function ArtisanPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id } = await params
 
+  const supabase = createSupabaseClient()
+
   const { data: artisan, error } = await supabase
-    .from('artisans')   // remplace par le vrai nom de ta table
+    .from('artisans')
     .select('*')
     .eq('id', id)
     .single()
 
-  if (error || !artisan) notFound()
+  if (error || !artisan) {
+    notFound()
+  }
 
   return (
-    // ton affichage actuel
+    // ton JSX ici
   )
 }
