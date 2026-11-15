@@ -96,7 +96,10 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-end">
-            <Link href="#" className="text-sm text-orange-600 hover:underline">
+            <Link
+              href="/auth/mot-de-passe-oublie"
+              className="text-sm text-orange-600 hover:underline"
+            >
               Mot de passe oublié ?
             </Link>
           </div>
