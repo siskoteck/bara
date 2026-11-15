@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { estEmailFictif } from "@/lib/auth";
 
 const WHATSAPP_SUPPORT = "2250707249678";
 
@@ -19,10 +20,11 @@ export default function MotDePasseOubliePage() {
     setSansEmail(false);
 
     const formData = new FormData(e.currentTarget);
-    const identifiant = (formData.get("identifiant") as string).trim();
+    const identifiant = (formData.get("identifiant") as string).trim().toLowerCase();
 
-    // Un numéro de téléphone ne peut pas recevoir d'e-mail
-    if (!identifiant.includes("@")) {
+    // Un numéro de téléphone ou un e-mail fictif ne peut pas recevoir d'e-mail
+    const estFictif = estEmailFictif(identifiant);
+    if (!identifiant.includes("@") || estFictif) {
       setSansEmail(true);
       setLoading(false);
       return;
@@ -30,7 +32,7 @@ export default function MotDePasseOubliePage() {
 
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        identifiant.toLowerCase(),
+        identifiant,
         { redirectTo: `${window.location.origin}/auth/reinitialiser` }
       );
       if (resetError) throw resetError;
