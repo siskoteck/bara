@@ -97,6 +97,15 @@ async function ArtisanContent({
             )}
           </div>
 
+          {artisan.note && (
+            <p className="mt-3 text-sm text-gray-600">
+              <span className="text-yellow-500 font-semibold">
+                ★ {artisan.note}
+              </span>{' '}
+              ({artisan.avis ?? 0} avis)
+            </p>
+          )}
+
           {artisan.description && (
             <p className="mt-6 text-gray-700 leading-relaxed whitespace-pre-line">
               {artisan.description}

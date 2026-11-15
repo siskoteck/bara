@@ -1,42 +1,22 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { createSupabaseClient } from "@/lib/supabase";
 
-export default function ArtisansPage() {
-  // Données temporaires (plus tard on les prendra de la base de données)
-  const artisans = [
-    {
-      id: 1,
-      nom: "Kouassi Jean",
-      metier: "Plombier",
-      quartier: "Cocody",
-      note: 4.8,
-      avis: 24,
-    },
-    {
-      id: 2,
-      nom: "Traoré Awa",
-      metier: "Électricienne",
-      quartier: "Yopougon",
-      note: 4.6,
-      avis: 18,
-    },
-    {
-      id: 3,
-      nom: "Koné Ibrahim",
-      metier: "Maçon",
-      quartier: "Abobo",
-      note: 4.9,
-      avis: 31,
-    },
-    {
-      id: 4,
-      nom: "Bamba Fatou",
-      metier: "Peintre",
-      quartier: "Marcory",
-      note: 4.7,
-      avis: 15,
-    },
-  ];
+const METIERS = ["Plombier", "Électricien", "Maçon", "Peintre", "Autre"];
+const COMMUNES = [
+  "Cocody",
+  "Yopougon",
+  "Abobo",
+  "Marcory",
+  "Plateau",
+  "Koumassi",
+];
 
+type Props = {
+  searchParams: Promise<{ metier?: string; commune?: string }>;
+};
+
+export default function ArtisansPage({ searchParams }: Props) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -55,51 +35,132 @@ export default function ArtisansPage() {
         </Link>
       </div>
 
-      {/* Filtres simples */}
-      <div className="bg-white p-4 rounded-xl shadow-sm mb-8 flex flex-wrap gap-3">
-        <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm">
-          <option>Toutes les catégories</option>
-          <option>Plomberie</option>
-          <option>Électricité</option>
-          <option>Maçonnerie</option>
-          <option>Peinture</option>
-          <option>Climatisation</option>
+      <Suspense
+        fallback={<p className="text-gray-500">Chargement des artisans…</p>}
+      >
+        <ListeArtisans searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ListeArtisans({ searchParams }: Props) {
+  const { metier, commune } = await searchParams;
+  const supabase = createSupabaseClient();
+
+  let requete = supabase
+    .from("artisans")
+    .select("id, name, metier, commune, photo_url, verifie, note, avis")
+    .order("note", { ascending: false, nullsFirst: false });
+
+  if (metier) requete = requete.eq("metier", metier);
+  if (commune) requete = requete.eq("commune", commune);
+
+  const { data: artisans, error } = await requete;
+
+  if (error) {
+    console.error("Erreur Supabase:", error);
+  }
+
+  return (
+    <>
+      {/* Filtres */}
+      <form
+        action="/artisans"
+        method="get"
+        className="bg-white p-4 rounded-xl shadow-sm mb-8 flex flex-wrap gap-3"
+      >
+        <select
+          name="metier"
+          defaultValue={metier ?? ""}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+        >
+          <option value="">Tous les métiers</option>
+          {METIERS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
         </select>
 
-        <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm">
-          <option>Toutes les communes</option>
-          <option>Cocody</option>
-          <option>Yopougon</option>
-          <option>Abobo</option>
-          <option>Marcory</option>
-          <option>Plateau</option>
-          <option>Koumassi</option>
+        <select
+          name="commune"
+          defaultValue={commune ?? ""}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+        >
+          <option value="">Toutes les communes</option>
+          {COMMUNES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
-      </div>
+
+        <button
+          type="submit"
+          className="bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
+        >
+          Filtrer
+        </button>
+
+        {(metier || commune) && (
+          <Link
+            href="/artisans"
+            className="px-3 py-2 text-sm text-gray-600 hover:underline"
+          >
+            Réinitialiser
+          </Link>
+        )}
+      </form>
+
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-6">
+          Impossible de charger les artisans pour le moment.
+        </p>
+      )}
+
+      {!error && (!artisans || artisans.length === 0) && (
+        <p className="text-gray-600">Aucun artisan trouvé pour ces critères.</p>
+      )}
 
       {/* Liste des artisans */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {artisans.map((artisan) => (
+        {artisans?.map((artisan) => (
           <Link
             key={artisan.id}
             href={`/artisans/${artisan.id}`}
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition"
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {artisan.nom}
+                  {artisan.name}
+                  {artisan.verifie && (
+                    <span className="ml-2 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                      ✓ Vérifié
+                    </span>
+                  )}
                 </h3>
-                <p className="text-orange-600 font-medium">{artisan.metier}</p>
-                <p className="text-sm text-gray-500 mt-1">{artisan.quartier}</p>
+                {artisan.metier && (
+                  <p className="text-orange-600 font-medium">{artisan.metier}</p>
+                )}
+                {artisan.commune && (
+                  <p className="text-sm text-gray-500 mt-1">{artisan.commune}</p>
+                )}
               </div>
-              <div className="text-right">
-                <div className="text-yellow-500 font-semibold">
-                  ★ {artisan.note}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {artisan.avis} avis
-                </div>
+              <div className="text-right shrink-0">
+                {artisan.note ? (
+                  <>
+                    <div className="text-yellow-500 font-semibold">
+                      ★ {artisan.note}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {artisan.avis ?? 0} avis
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-gray-500">Nouveau</div>
+                )}
               </div>
             </div>
 
@@ -111,6 +172,6 @@ export default function ArtisansPage() {
           </Link>
         ))}
       </div>
-    </div>
+    </>
   );
 }
