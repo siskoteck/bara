@@ -8,21 +8,24 @@ import { supabase } from "@/lib/supabase";
 export default function AuthButtons() {
   const router = useRouter();
   const [nom, setNom] = useState<string | null>(null);
+  const [estArtisan, setEstArtisan] = useState(false);
   const [connecte, setConnecte] = useState(false);
   const [pret, setPret] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user;
+    function appliquer(user: any) {
       setConnecte(!!user);
       setNom(user?.user_metadata?.nom ?? null);
+      setEstArtisan(user?.user_metadata?.type_compte === "artisan");
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      appliquer(data.session?.user);
       setPret(true);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user;
-      setConnecte(!!user);
-      setNom(user?.user_metadata?.nom ?? null);
+      appliquer(session?.user);
     });
 
     return () => sub.subscription.unsubscribe();
@@ -39,10 +42,20 @@ export default function AuthButtons() {
   if (connecte) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-700">{nom ?? "Mon compte"}</span>
+        {estArtisan && (
+          <Link
+            href="/mon-profil"
+            className="text-sm font-medium text-orange-600 hover:underline"
+          >
+            Mon profil
+          </Link>
+        )}
+        <span className="text-sm text-gray-700 hidden sm:inline">
+          {nom ?? "Mon compte"}
+        </span>
         <button
           onClick={deconnexion}
-          className="text-sm text-orange-600 hover:underline"
+          className="text-sm text-gray-600 hover:underline"
         >
           Déconnexion
         </button>
