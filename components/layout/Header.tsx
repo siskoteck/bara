@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+import AuthButtons from "./AuthButtons";
 export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -24,21 +24,8 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Boutons */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth/login"
-              className="text-gray-700 hover:text-orange-600 text-sm font-medium"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/auth/register"
-              className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
-            >
-              S'inscrire
-            </Link>
-          </div>
+          {/* Boutons de connexion / compte */}
+          <AuthButtons />
         </div>
       </div>
     </header>
