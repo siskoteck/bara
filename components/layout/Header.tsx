@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthButtons from "./AuthButtons";
+
 export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
