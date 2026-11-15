@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase'
 
@@ -17,8 +18,9 @@ export default function ArtisanPage({
 }
 
 // Numéros ivoiriens : 10 chiffres, indicatif 225 pour WhatsApp
-function whatsappLink(telephone: string, nom: string) {
+function whatsappLink(telephone: string, nom: string): string | null {
   const digits = telephone.replace(/\D/g, '')
+  if (digits.length < 8) return null
   const number = digits.startsWith('225') ? digits : `225${digits}`
   const message = encodeURIComponent(
     `Bonjour ${nom}, je vous contacte depuis BARA. J'ai besoin d'un devis.`
@@ -39,15 +41,30 @@ async function ArtisanContent({
     .from('artisans')
     .select('*')
     .eq('id', id)
-    .single()
+    .maybeSingle()
+
+  if (error) {
+    console.error('Erreur Supabase:', error)
+  }
 
   if (error || !artisan) {
     notFound()
   }
 
+  const lienWhatsApp = artisan.telephone
+    ? whatsappLink(artisan.telephone, artisan.name)
+    : null
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <Link
+        href="/artisans"
+        className="text-sm text-orange-600 hover:underline"
+      >
+        ← Retour aux artisans
+      </Link>
+
+      <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {artisan.photo_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -86,10 +103,10 @@ async function ArtisanContent({
             </p>
           )}
 
-          {artisan.telephone && (
+          {lienWhatsApp ? (
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <a
-                href={whatsappLink(artisan.telephone, artisan.name)}
+                href={lienWhatsApp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg"
@@ -103,10 +120,13 @@ async function ArtisanContent({
                 Appeler
               </a>
             </div>
+          ) : (
+            <p className="mt-8 text-sm text-gray-500">
+              Cet artisan n&apos;a pas encore renseigné de numéro de téléphone.
+            </p>
           )}
         </div>
       </div>
     </div>
   )
-  console.error('Erreur Supabase:', error)
 }
