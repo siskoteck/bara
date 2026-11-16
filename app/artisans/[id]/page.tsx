@@ -149,6 +149,33 @@ async function ArtisanContent({
             </p>
           )}
 
+          {/* Galerie des réalisations */}
+          {artisan.realisations && artisan.realisations.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">
+                Réalisations récentes
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {artisan.realisations.map((photoUrl: string, index: number) => (
+                  <a
+                    key={photoUrl}
+                    href={photoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block overflow-hidden rounded-xl border border-gray-200 hover:opacity-95 transition"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoUrl}
+                      alt={`Réalisation ${index + 1} de ${artisan.name}`}
+                      className="w-full h-40 object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {lienWhatsApp ? (
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <a

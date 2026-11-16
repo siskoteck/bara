@@ -10,6 +10,10 @@ interface Artisan {
   name: string;
   metier: string;
   commune: string | null;
+  quartier?: string | null;
+  disponible?: boolean | null;
+  note?: number | null;
+  avis?: number | null;
   telephone: string | null;
   avatar_url?: string | null;
   verifie?: boolean | null;
@@ -24,6 +28,7 @@ export function ArtisansRecommandes() {
       const { data, error } = await supabase
         .from("artisans")
         .select("*")
+        .order("verifie", { ascending: false })
         .limit(6);
 
       if (!error && data) {
@@ -88,10 +93,11 @@ export function ArtisansRecommandes() {
                 <div>
                   <div className="flex items-center gap-4 mb-4">
                     {artisan.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={artisan.avatar_url}
                         alt={artisan.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-orange-500"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shrink-0"
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-bold border border-orange-200 shrink-0">
@@ -109,18 +115,36 @@ export function ArtisansRecommandes() {
                       {artisan.commune && (
                         <p className="text-gray-500 text-xs mt-0.5">
                           📍 {artisan.commune}
+                          {artisan.quartier ? ` (${artisan.quartier})` : ""}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {artisan.verifie && (
-                    <div className="mb-4">
-                      <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-1 rounded-full">
-                        <span>✓</span> Profil vérifié
+                  {/* Badges : Note, Vérifié, Disponibilité */}
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {artisan.note ? (
+                      <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 border border-yellow-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        ★ {artisan.note} ({artisan.avis ?? 0})
                       </span>
-                    </div>
-                  )}
+                    ) : (
+                      <span className="inline-flex items-center bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">
+                        Nouveau
+                      </span>
+                    )}
+
+                    {artisan.verifie && (
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        ✓ Vérifié
+                      </span>
+                    )}
+
+                    {artisan.disponible !== false && (
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        🟢 Disponible
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-3 border-t border-gray-100">
