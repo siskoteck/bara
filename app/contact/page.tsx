@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-const WHATSAPP_SUPPORT = "2250707249678";
-
 export default function ContactPage() {
   const [envoye, setEnvoye] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,7 +19,6 @@ export default function ContactPage() {
     const contact = (formData.get("contact") as string).trim();
     const message = (formData.get("message") as string).trim();
 
-    // 1. Enregistrer le message dans Supabase
     const { error: insertError } = await supabase
       .from("messages_contact")
       .insert([{ nom, contact, message }]);
@@ -35,7 +32,6 @@ export default function ContactPage() {
       return;
     }
 
-    // 2. Envoyer une notification par e-mail à l'administrateur
     try {
       await fetch("/api/notifier", {
         method: "POST",
@@ -79,9 +75,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href={`https://whatsapp.com{WHATSAPP_SUPPORT}&text=${encodeURIComponent(
-              "Bonjour l'équipe BARA, j'ai besoin d'assistance."
-            )}`}
+            href="https://whatsapp.com."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-green-600 font-semibold text-sm mt-1 hover:underline"
