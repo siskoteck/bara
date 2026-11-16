@@ -5,10 +5,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+const ADMIN_EMAIL = "cv2tcv2t@gmail.com";
+
 export default function AuthButtons() {
   const router = useRouter();
   const [nom, setNom] = useState<string | null>(null);
   const [estArtisan, setEstArtisan] = useState(false);
+  const [estAdmin, setEstAdmin] = useState(false);
   const [connecte, setConnecte] = useState(false);
   const [pret, setPret] = useState(false);
 
@@ -17,6 +20,7 @@ export default function AuthButtons() {
       setConnecte(!!user);
       setNom(user?.user_metadata?.nom ?? null);
       setEstArtisan(user?.user_metadata?.type_compte === "artisan");
+      setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -42,6 +46,14 @@ export default function AuthButtons() {
   if (connecte) {
     return (
       <div className="flex items-center gap-3">
+        {estAdmin && (
+          <Link
+            href="/admin"
+            className="text-xs font-bold bg-gray-900 text-white px-2.5 py-1 rounded-md hover:bg-gray-800"
+          >
+            Admin
+          </Link>
+        )}
         <Link
           href="/mes-demandes"
           className="text-sm font-medium text-gray-700 hover:text-orange-600"
@@ -78,7 +90,7 @@ export default function AuthButtons() {
         href="/auth/register"
         className="text-sm bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
       >
-        S'inscrire
+        S&apos;inscrire
       </Link>
     </div>
   );
