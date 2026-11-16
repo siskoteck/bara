@@ -1,19 +1,42 @@
+"use client";
+
 import Link from "next/link";
-import { cacheLife } from "next/cache";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { genererLienWhatsApp } from "@/lib/whatsapp";
 
-export async function ArtisansRecommandes() {
-  "use cache";
-  cacheLife("hours");
+interface Artisan {
+  id: string;
+  name: string;
+  metier: string;
+  commune: string | null;
+  telephone: string | null;
+  avatar_url: string | null;
+  verifie: boolean | null;
+}
 
-  const { data: artisansRecommandes } = await supabase
-    .from("artisans")
-    .select("id, name, metier, commune, telephone, avatar_url, verifie")
-    .order("verifie", { ascending: false })
-    .limit(6);
+export function ArtisansRecommandes() {
+  const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!artisansRecommandes || artisansRecommandes.length === 0) {
+  useEffect(() => {
+    async function chargerArtisans() {
+      const { data } = await supabase
+        .from("artisans")
+        .select("id, name, metier, commune, telephone, avatar_url, verifie")
+        .order("verifie", { ascending: false })
+        .limit(6);
+
+      if (data) {
+        setArtisans(data);
+      }
+      setLoading(false);
+    }
+
+    chargerArtisans();
+  }, []);
+
+  if (loading || artisans.length === 0) {
     return null;
   }
 
@@ -38,11 +61,11 @@ export async function ArtisansRecommandes() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {artisansRecommandes.map((artisan) => {
+          {artisans.map((artisan) => {
             const initiales = artisan.name
               ? artisan.name
                   .split(" ")
-                  .map((n: string) => n[0])
+                  .map((n) => n[0])
                   .join("")
                   .toUpperCase()
                   .slice(0, 2)
