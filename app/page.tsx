@@ -3,8 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { METIERS, COMMUNES } from "@/lib/constantes";
 import { genererLienWhatsApp } from "@/lib/whatsapp";
 
-export const revalidate = 60;
-
 const ICONES_METIERS: Record<string, string> = {
   "Plombier": "🔧",
   "Électricien": "⚡",
@@ -141,7 +139,6 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
-
       {/* Artisans recommandés à Abidjan */}
       {artisansRecommandes && artisansRecommandes.length > 0 && (
         <section className="py-16 bg-orange-50/50 border-t border-b border-orange-100">
@@ -250,3 +247,60 @@ export default async function HomePage() {
 
       {/* Comment ça marche */}
       <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Comment ça marche ?
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                1
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Décrivez votre besoin</h3>
+              <p className="text-gray-600">
+                Expliquez ce dont vous avez besoin et votre quartier à Abidjan.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Recevez des propositions</h3>
+              <p className="text-gray-600">
+                Des artisans qualifiés vous contactent rapidement.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                3
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Choisissez et notez</h3>
+              <p className="text-gray-600">
+                Sélectionnez l&apos;artisan et laissez un avis après le travail.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA final */}
+      <section className="py-16 bg-orange-600 text-white text-center">
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-4">Vous êtes artisan ?</h2>
+          <p className="text-xl mb-8 text-orange-100">
+            Rejoignez BARA et développez votre activité à Abidjan.
+          </p>
+          <Link
+            href="/auth/register"
+            className="bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50"
+          >
+            Créer mon profil artisan
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
