@@ -22,15 +22,32 @@ export default function ContactPage() {
     const contact = (formData.get("contact") as string).trim();
     const message = (formData.get("message") as string).trim();
 
+    // 1. Enregistrer le message dans Supabase
     const { error: insertError } = await supabase
       .from("messages_contact")
       .insert([{ nom, contact, message }]);
 
     if (insertError) {
       console.error("Erreur envoi message:", insertError);
-      setError("Impossible d'envoyer votre message. Réessayez ou écrivez-nous sur WhatsApp.");
+      setError(
+        "Impossible d'envoyer votre message. Réessayez ou écrivez-nous sur WhatsApp."
+      );
       setLoading(false);
       return;
+    }
+
+    // 2. Envoyer une notification par e-mail à l'administrateur
+    try {
+      await fetch("/api/notifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sujet: `📩 Nouveau message Contact BARA de ${nom}`,
+          contenu: `Nom : ${nom}\nContact : ${contact}\n\nMessage :\n${message}`,
+        }),
+      });
+    } catch (mailError) {
+      console.error("Erreur notification e-mail:", mailError);
     }
 
     setEnvoye(true);
@@ -117,7 +134,7 @@ export default function ContactPage() {
               name="contact"
               type="text"
               required
-              placeholder="07 07 24 96 78 ou vous@exemple.com"
+              placeholder="07 00 00 00 00 ou vous@exemple.com"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
             />
           </div>

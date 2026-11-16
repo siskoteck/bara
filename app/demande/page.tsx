@@ -18,25 +18,47 @@ export default function DemandePage() {
     const formData = new FormData(e.currentTarget);
     const metierChoisi = formData.get("categorie") as string;
     const communeChoisie = formData.get("quartier") as string;
+    const descriptionSaisie = (formData.get("description") as string).trim();
+    const telephoneSaisi = (formData.get("telephone") as string).trim();
+    const budgetSaisi = ((formData.get("budget") as string) || "").trim() || null;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id ?? null;
 
     const nouvelleDemande = {
+      user_id: userId,
       titre: `${metierChoisi} - ${communeChoisie}`,
       metier: metierChoisi,
-      "Quartier / commune": communeChoisie,
-      "Description du besoin": (formData.get("description") as string).trim(),
-      telephone: (formData.get("telephone") as string).trim(),
-      budget: ((formData.get("budget") as string) || "").trim() || null,
-      categorie: metierChoisi,
+      commune: communeChoisie,
+      description: descriptionSaisie,
+      telephone: telephoneSaisi,
+      budget: budgetSaisi,
       statut: "ouverte",
     };
 
-    const { error } = await supabase.from("demandes").insert([nouvelleDemande]);
+    const { error: insertError } = await supabase
+      .from("demandes")
+      .insert([nouvelleDemande]);
 
-    if (error) {
-      console.error(error);
-      setError("Erreur lors de l'envoi : " + error.message);
+    if (insertError) {
+      console.error(insertError);
+      setError("Erreur lors de l'envoi : " + insertError.message);
       setLoading(false);
       return;
+    }
+
+    // Envoi de la notification par e-mail (sans bloquer l'utilisateur si l'e-mail échoue)
+    try {
+      await fetch("/api/notifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sujet: `🛠️ Nouvelle demande : ${metierChoisi} à ${communeChoisie}`,
+          contenu: `Métier : ${metierChoisi}\nCommune : ${communeChoisie}\nTéléphone client : ${telephoneSaisi}\nBudget : ${budgetSaisi || "Non précisé"}\n\nDescription :\n${descriptionSaisie}`,
+        }),
+      });
+    } catch (mailError) {
+      console.error("Erreur notification e-mail:", mailError);
     }
 
     setEnvoye(true);
@@ -52,12 +74,20 @@ export default function DemandePage() {
           <p className="text-gray-600 mb-8">
             Des artisans qualifiés vont bientôt vous contacter.
           </p>
-          <Link
-            href="/"
-            className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700"
-          >
-            Retour à l’accueil
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/mes-demandes"
+              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700"
+            >
+              Voir mes demandes
+            </Link>
+            <Link
+              href="/"
+              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Retour à l’accueil
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -74,7 +104,6 @@ export default function DemandePage() {
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl shadow-sm border p-8 space-y-6"
       >
-        {/* Métier recherché (depuis lib/constantes.ts) */}
         <div>
           <label htmlFor="categorie" className="block text-sm font-medium mb-2">
             Métier recherché *
@@ -97,7 +126,6 @@ export default function DemandePage() {
           </select>
         </div>
 
-        {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium mb-2">
             Description du besoin *
@@ -112,7 +140,6 @@ export default function DemandePage() {
           />
         </div>
 
-        {/* Commune (depuis lib/constantes.ts) */}
         <div>
           <label htmlFor="quartier" className="block text-sm font-medium mb-2">
             Commune à Abidjan *
@@ -135,7 +162,6 @@ export default function DemandePage() {
           </select>
         </div>
 
-        {/* Téléphone */}
         <div>
           <label htmlFor="telephone" className="block text-sm font-medium mb-2">
             Votre numéro de téléphone (WhatsApp) *
@@ -152,7 +178,6 @@ export default function DemandePage() {
           />
         </div>
 
-        {/* Budget */}
         <div>
           <label htmlFor="budget" className="block text-sm font-medium mb-2">
             Budget approximatif (optionnel)
