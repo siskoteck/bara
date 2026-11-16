@@ -11,8 +11,8 @@ interface Artisan {
   metier: string;
   commune: string | null;
   telephone: string | null;
-  avatar_url: string | null;
-  verifie: boolean | null;
+  avatar_url?: string | null;
+  verifie?: boolean | null;
 }
 
 export function ArtisansRecommandes() {
@@ -21,13 +21,12 @@ export function ArtisansRecommandes() {
 
   useEffect(() => {
     async function chargerArtisans() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("artisans")
-        .select("id, name, metier, commune, telephone, avatar_url, verifie")
-        .order("verifie", { ascending: false })
+        .select("*")
         .limit(6);
 
-      if (data) {
+      if (!error && data) {
         setArtisans(data);
       }
       setLoading(false);
@@ -36,7 +35,17 @@ export function ArtisansRecommandes() {
     chargerArtisans();
   }, []);
 
-  if (loading || artisans.length === 0) {
+  if (loading) {
+    return (
+      <section className="py-16 bg-orange-50/50 border-t border-b border-orange-100">
+        <div className="max-w-6xl mx-auto px-4 text-center text-gray-500">
+          Chargement des artisans recommandés...
+        </div>
+      </section>
+    );
+  }
+
+  if (artisans.length === 0) {
     return null;
   }
 
