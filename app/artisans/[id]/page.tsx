@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase";
 import { genererLienWhatsApp } from "@/lib/whatsapp";
+import { SectionAvis } from "@/components/SectionAvis";
 
 export default function ArtisanPage({
   params,
@@ -61,7 +62,6 @@ async function ArtisanContent({
         .toUpperCase()
         .slice(0, 2)
     : "A";
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Link
@@ -110,6 +110,7 @@ async function ArtisanContent({
             </div>
           </div>
 
+          {/* Badges Métier, Commune + Quartier et Disponibilité */}
           <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
             {artisan.metier && (
               <span className="bg-orange-50 text-orange-700 font-medium px-3 py-1 rounded-full">
@@ -119,6 +120,16 @@ async function ArtisanContent({
             {artisan.commune && (
               <span className="bg-gray-100 px-3 py-1 rounded-full">
                 📍 {artisan.commune}
+                {artisan.quartier ? ` (${artisan.quartier})` : ""}
+              </span>
+            )}
+            {artisan.disponible !== false ? (
+              <span className="bg-green-50 text-green-700 border border-green-200 font-medium px-3 py-1 rounded-full">
+                🟢 Disponible
+              </span>
+            ) : (
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 font-medium px-3 py-1 rounded-full">
+                🟠 Occupé actuellement
               </span>
             )}
           </div>
@@ -160,6 +171,9 @@ async function ArtisanContent({
               Cet artisan n&apos;a pas encore renseigné de numéro de téléphone.
             </p>
           )}
+
+          {/* Section Avis et Notation */}
+          <SectionAvis artisanId={artisan.id} />
         </div>
       </div>
     </div>
