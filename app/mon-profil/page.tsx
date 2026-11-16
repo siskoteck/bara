@@ -1,112 +1,259 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { METIERS, COMMUNES } from "@/lib/constantes";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
-interface AvatarUploadProps {
-  userId: string;
-  nom: string;
-  urlActuelle: string | null;
-  onUpload: (nouvelleUrl: string) => void;
-}
+type Fiche = {
+  id: number;
+  name: string | null;
+  metier: string | null;
+  commune: string | null;
+  description: string | null;
+  telephone: string | null;
+  avatar_url: string | null;
+};
 
-export function AvatarUpload({
-  userId,
-  nom,
-  urlActuelle,
-  onUpload,
-}: AvatarUploadProps) {
-  const [uploading, setUploading] = useState(false);
+export default function MonProfilPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [fiche, setFiche] = useState<Fiche | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [succes, setSucces] = useState(false);
 
-  const initiales = nom
-    ? nom
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "A";
+  useEffect(() => {
+    async function charger() {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    try {
-      setUploading(true);
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      if (!file.type.startsWith("image/")) {
-        alert("Veuillez sélectionner une image valide (JPG, PNG ou WebP).");
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        alert("L'image ne doit pas dépasser 2 Mo.");
+      if (!user) {
+        router.replace("/auth/login");
         return;
       }
 
-      const ext = file.name.split(".").pop() || "jpg";
-      const filePath = `${userId}/avatar.${ext}`;
+      setUserId(user.id);
 
-      // 1. Envoyer l'image dans le bucket "avatars"
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // 2. Récupérer l'URL publique (avec un timestamp pour forcer le rafraîchissement)
-      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
-
-      // 3. Mettre à jour la fiche artisan dans la base de données
-      const { error: dbError } = await supabase
+      const { data: ligne, error: erreur } = await supabase
         .from("artisans")
-        .update({ avatar_url: publicUrl })
-        .eq("user_id", userId);
+        .select("id, name, metier, commune, description, telephone, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (dbError) throw dbError;
+      if (erreur) {
+        console.error("Erreur chargement fiche:", erreur);
+        setError("Impossible de charger votre fiche.");
+      }
 
-      onUpload(publicUrl);
-    } catch (error: any) {
-      console.error("Erreur upload avatar:", error);
-      alert(
-        "Erreur lors de l'envoi de la photo : " + (error.message || "Inconnue")
-      );
+      setFiche(ligne);
+      setChargement(false);
+    }
+
+    charger();
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!userId) return;
+
+    setSaving(true);
+    setError("");
+    setSucces(false);
+
+    const formData = new FormData(e.currentTarget);
+    const miseAJour = {
+      name: (formData.get("name") as string).trim(),
+      metier: formData.get("metier") as string,
+      commune: (formData.get("commune") as string) || null,
+      description: ((formData.get("description") as string) || "").trim() || null,
+      telephone: (formData.get("telephone") as string).trim(),
+    };
+
+    try {
+      const { data, error: updateError } = await supabase
+        .from("artisans")
+        .update(miseAJour)
+        .eq("user_id", userId)
+        .select("id");
+
+      if (updateError) throw updateError;
+
+      if (!data || data.length === 0) {
+        throw new Error("Modification refusée. Reconnectez-vous et réessayez.");
+      }
+
+      setFiche((prev) => (prev ? { ...prev, ...miseAJour } : null));
+      setSucces(true);
+    } catch (err: any) {
+      console.error("Erreur mise à jour fiche:", err);
+      setError(err.message || "Une erreur est survenue");
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   }
 
-  return (
-    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-      {urlActuelle ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={urlActuelle}
-          alt={nom}
-          className="w-20 h-20 rounded-full object-cover border-2 border-orange-600 shrink-0"
-        />
-      ) : (
-        <div className="w-20 h-20 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xl font-bold border-2 border-orange-200 shrink-0">
-          {initiales}
-        </div>
-      )}
+  if (chargement) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-gray-500">
+        Chargement…
+      </div>
+    );
+  }
 
-      <div>
-        <p className="text-sm font-semibold text-gray-900 mb-1">
-          Photo de profil
+  if (!fiche) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
+          <h1 className="text-xl font-bold mb-2">Pas de fiche artisan</h1>
+          <p className="text-gray-600 mb-6">
+            Votre compte n&apos;est pas un compte artisan, donc il n&apos;a pas de fiche à
+            modifier.
+          </p>
+          <Link href="/artisans" className="text-orange-600 font-medium hover:underline">
+            Voir les artisans
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-10">
+      <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
+        <h1 className="text-2xl font-bold mb-1">Mon profil</h1>
+        <p className="text-gray-600 mb-6">
+          Complétez votre fiche : c&apos;est ce que voient les clients avant de vous
+          contacter sur WhatsApp.
         </p>
-        <label className="cursor-pointer bg-white hover:bg-orange-50 text-orange-600 border border-orange-300 text-sm font-medium px-4 py-2 rounded-lg transition inline-block">
-          {uploading ? "Envoi en cours..." : "📷 Choisir une photo"}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={uploading}
-            className="hidden"
-          />
-        </label>
-        <p className="text-xs text-gray-500 mt-1.5">
-          JPG, PNG ou WebP. Taille max : 2 Mo.
-        </p>
+
+        {userId && (
+          <div className="mb-6">
+            <AvatarUpload
+              userId={userId}
+              nom={fiche.name ?? "Artisan"}
+              urlActuelle={fiche.avatar_url}
+              onUpload={(nouvelleUrl) =>
+                setFiche((prev) =>
+                  prev ? { ...prev, avatar_url: nouvelleUrl } : null
+                )
+              }
+            />
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium mb-1">
+              Nom complet
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              defaultValue={fiche.name ?? ""}
+              autoComplete="name"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="metier" className="block text-sm font-medium mb-1">
+              Métier principal
+            </label>
+            <select
+              id="metier"
+              name="metier"
+              defaultValue={fiche.metier ?? METIERS}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+            >
+              {METIERS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="commune" className="block text-sm font-medium mb-1">
+              Commune
+            </label>
+            <select
+              id="commune"
+              name="commune"
+              defaultValue={fiche.commune ?? ""}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+            >
+              <option value="">Choisir une commune</option>
+              {COMMUNES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="telephone" className="block text-sm font-medium mb-1">
+              Numéro WhatsApp
+            </label>
+            <input
+              id="telephone"
+              name="telephone"
+              type="tel"
+              required
+              defaultValue={fiche.telephone ?? ""}
+              autoComplete="tel"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              placeholder="07 00 00 00 00"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium mb-1">
+              Présentation
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={5}
+              defaultValue={fiche.description ?? ""}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              placeholder="Vos services, votre expérience, vos zones d'intervention…"
+            />
+          </div>
+
+          {error && (
+            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {succes && (
+            <div className="text-green-700 text-sm bg-green-50 p-3 rounded-lg">
+              Votre fiche a été mise à jour.{" "}
+              <Link
+                href={`/artisans/${fiche.id}`}
+                className="font-medium underline"
+              >
+                Voir ma fiche publique
+              </Link>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:opacity-50"
+          >
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </button>
+        </form>
       </div>
     </div>
   );
