@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { METIERS } from "@/lib/constantes";
+import { METIERS, COMMUNES } from "@/lib/constantes";
 
 // Associe une icône à chaque métier exact de lib/constantes.ts
 const ICONES_METIERS: Record<string, string> = {
@@ -31,28 +31,76 @@ const CATEGORIES_ACCUEIL = METIERS.filter((m) => m !== "Autre").slice(0, 12);
 export default function HomePage() {
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero Section avec barre de recherche rapide */}
       <section className="bg-orange-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-5xl mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             Trouvez un artisan de confiance à Abidjan
           </h1>
-          <p className="text-xl mb-8 text-orange-100">
+          <p className="text-xl mb-10 text-orange-100">
             Plombiers, électriciens, maçons, peintres… Trouvez le bon professionnel rapidement.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/artisans"
-              className="bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50"
+          {/* Barre de recherche rapide : Métier + Commune */}
+          <form
+            action="/artisans"
+            method="GET"
+            className="bg-white p-3 rounded-2xl shadow-lg max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 text-gray-800"
+          >
+            <div className="flex-1">
+              <label htmlFor="search-metier" className="sr-only">
+                Métier recherché
+              </label>
+              <select
+                id="search-metier"
+                name="metier"
+                defaultValue=""
+                className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-orange-500 text-gray-800"
+              >
+                <option value="">Tous les métiers</option>
+                {METIERS.map((metier) => (
+                  <option key={metier} value={metier}>
+                    {metier}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1">
+              <label htmlFor="search-commune" className="sr-only">
+                Commune à Abidjan
+              </label>
+              <select
+                id="search-commune"
+                name="commune"
+                defaultValue=""
+                className="w-full h-12 px-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-orange-500 text-gray-800"
+              >
+                <option value="">Toutes les communes</option>
+                {COMMUNES.map((commune) => (
+                  <option key={commune} value={commune}>
+                    {commune}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="h-12 px-8 bg-orange-600 text-white font-semibold rounded-xl hover:bg-orange-700 transition shrink-0"
             >
-              Trouver un artisan
-            </Link>
+              Rechercher
+            </button>
+          </form>
+
+          {/* Lien secondaire vers le dépôt de demande */}
+          <div className="mt-6 text-sm text-orange-100">
+            Vous préférez recevoir des devis ?{" "}
             <Link
               href="/demande"
-              className="bg-orange-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-800"
+              className="underline font-semibold text-white hover:text-orange-50"
             >
-              Poster une demande
+              Poster une demande gratuitement →
             </Link>
           </div>
         </div>
