@@ -5,7 +5,7 @@ import { genererLienWhatsApp } from "@/lib/whatsapp";
 
 export async function ArtisansRecommandes() {
   "use cache";
-  cacheLife("minutes");
+  cacheLife("hours");
 
   const { data: artisansRecommandes } = await supabase
     .from("artisans")
