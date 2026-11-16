@@ -12,6 +12,10 @@ interface Artisan {
   name: string;
   metier: string;
   commune: string | null;
+  quartier?: string | null;
+  disponible?: boolean | null;
+  note?: number | null;
+  avis?: number | null;
   telephone: string | null;
   description: string | null;
   avatar_url?: string | null;
@@ -73,7 +77,6 @@ function AnnuaireArtisansContent() {
     const queryString = params.toString();
     router.replace(queryString ? `/artisans?${queryString}` : "/artisans");
   }
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="mb-8">
@@ -85,7 +88,7 @@ function AnnuaireArtisansContent() {
         </p>
       </div>
 
-      {/* Barre de filtres unifiée avec lib/constantes.ts */}
+      {/* Barre de filtres */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-8 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <label
@@ -144,7 +147,7 @@ function AnnuaireArtisansContent() {
         )}
       </div>
 
-      {/* Liste des résultats */}
+      {/* Résultats */}
       {loading ? (
         <div className="text-center py-16 text-gray-500">
           Recherche des artisans en cours...
@@ -206,18 +209,36 @@ function AnnuaireArtisansContent() {
                       {artisan.commune && (
                         <p className="text-gray-500 text-xs mt-0.5">
                           📍 {artisan.commune}
+                          {artisan.quartier ? ` (${artisan.quartier})` : ""}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {artisan.verifie && (
-                    <div className="mb-3">
-                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ✓ Profil vérifié
+                  {/* Badges : Note, Vérifié, Disponibilité */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {artisan.note ? (
+                      <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 border border-yellow-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        ★ {artisan.note} ({artisan.avis ?? 0})
                       </span>
-                    </div>
-                  )}
+                    ) : (
+                      <span className="inline-flex items-center bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">
+                        Nouveau
+                      </span>
+                    )}
+
+                    {artisan.verifie && (
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                        ✓ Vérifié
+                      </span>
+                    )}
+
+                    {artisan.disponible !== false && (
+                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        🟢 Disponible
+                      </span>
+                    )}
+                  </div>
 
                   {artisan.description && (
                     <p className="text-gray-600 text-sm line-clamp-2 mb-4">
