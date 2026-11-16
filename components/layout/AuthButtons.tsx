@@ -42,6 +42,12 @@ export default function AuthButtons() {
   if (connecte) {
     return (
       <div className="flex items-center gap-3">
+        <Link
+          href="/mes-demandes"
+          className="text-sm font-medium text-gray-700 hover:text-orange-600"
+        >
+          Mes demandes
+        </Link>
         {estArtisan && (
           <Link
             href="/mon-profil"
@@ -50,7 +56,7 @@ export default function AuthButtons() {
             Mon profil
           </Link>
         )}
-        <span className="text-sm text-gray-700 hidden sm:inline">
+        <span className="text-sm text-gray-700 hidden lg:inline">
           {nom ?? "Mon compte"}
         </span>
         <button
