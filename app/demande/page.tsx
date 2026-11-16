@@ -1,5 +1,6 @@
 "use client";
 
+import { METIERS, COMMUNES } from "@/lib/constantes";
 import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";

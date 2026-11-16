@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { telephoneVersEmail } from "@/lib/auth";
+import { METIERS, COMMUNES } from "@/lib/constantes";
 import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
 
 export default function RegisterPage() {
@@ -26,6 +27,7 @@ export default function RegisterPage() {
     const emailSaisi = ((formData.get("email") as string) || "").trim().toLowerCase();
     const password = formData.get("password") as string;
     const metier = formData.get("metier") as string;
+    const commune = formData.get("commune") as string;
 
     // E-mail réel si fourni, sinon e-mail fictif basé sur le téléphone
     const email = emailSaisi || telephoneVersEmail(telephone);
@@ -43,6 +45,7 @@ export default function RegisterPage() {
             email_contact: emailSaisi || null,
             type_compte: typeCompte,
             metier: typeCompte === "artisan" ? metier : null,
+            commune: typeCompte === "artisan" ? commune : null,
           },
         },
       });
@@ -168,22 +171,51 @@ export default function RegisterPage() {
           </div>
 
           {typeCompte === "artisan" && (
-            <div>
-              <label htmlFor="metier" className="block text-sm font-medium mb-1">
-                Métier principal
-              </label>
-              <select
-                id="metier"
-                name="metier"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              >
-                <option>Plombier</option>
-                <option>Électricien</option>
-                <option>Maçon</option>
-                <option>Peintre</option>
-                <option>Autre</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label htmlFor="metier" className="block text-sm font-medium mb-1">
+                  Métier principal
+                </label>
+                <select
+                  id="metier"
+                  name="metier"
+                  required
+                  defaultValue=""
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+                >
+                  <option value="" disabled>
+                    Choisir un métier
+                  </option>
+                  {METIERS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="commune" className="block text-sm font-medium mb-1">
+                  Commune d'intervention
+                </label>
+                <select
+                  id="commune"
+                  name="commune"
+                  required
+                  defaultValue=""
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+                >
+                  <option value="" disabled>
+                    Choisir une commune
+                  </option>
+                  {COMMUNES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
 
           <Captcha onToken={setCaptchaToken} resetSignal={resetSignal} />

@@ -1,3 +1,4 @@
+import { METIERS, COMMUNES } from "@/lib/constantes";
 import Link from "next/link";
 import AvisList from "@/components/artisans/AvisList";
 

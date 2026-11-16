@@ -4,21 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-const METIERS = ["Plombier", "Électricien", "Maçon", "Peintre", "Autre"];
-const COMMUNES = [
-  "Cocody",
-  "Yopougon",
-  "Abobo",
-  "Marcory",
-  "Plateau",
-  "Koumassi",
-  "Treichville",
-  "Adjamé",
-  "Port-Bouët",
-  "Attécoubé",
-  "Bingerville",
-];
+import { METIERS, COMMUNES } from "@/lib/constantes";
 
 type Fiche = {
   id: number;
