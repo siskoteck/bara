@@ -1,12 +1,13 @@
-import { Suspense } from 'react'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { createSupabaseClient } from '@/lib/supabase'
+import { Suspense } from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createSupabaseClient } from "@/lib/supabase";
+import { genererLienWhatsApp } from "@/lib/whatsapp";
 
 export default function ArtisanPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
   return (
     <Suspense
@@ -14,79 +15,104 @@ export default function ArtisanPage({
     >
       <ArtisanContent params={params} />
     </Suspense>
-  )
-}
-
-// Numéros ivoiriens : 10 chiffres, indicatif 225 pour WhatsApp
-function whatsappLink(telephone: string, nom: string): string | null {
-  const digits = telephone.replace(/\D/g, '')
-  if (digits.length < 8) return null
-  const number = digits.startsWith('225') ? digits : `225${digits}`
-  const message = encodeURIComponent(
-    `Bonjour ${nom}, je vous contacte depuis BARA. J'ai besoin d'un devis.`
-  )
-  return `https://wa.me/${number}?text=${message}`
+  );
 }
 
 async function ArtisanContent({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await params
+  const { id } = await params;
 
-  const supabase = createSupabaseClient()
+  const supabase = createSupabaseClient();
 
   const { data: artisan, error } = await supabase
-    .from('artisans')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
+    .from("artisans")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
   if (error) {
-    console.error('Erreur Supabase:', error)
+    console.error("Erreur Supabase:", error);
   }
 
   if (error || !artisan) {
-    notFound()
+    notFound();
   }
 
-  const lienWhatsApp = artisan.telephone
-    ? whatsappLink(artisan.telephone, artisan.name)
-    : null
+  const lienWhatsApp =
+    artisan.telephone && artisan.telephone.replace(/\D/g, "").length >= 8
+      ? genererLienWhatsApp(
+          artisan.telephone,
+          artisan.name,
+          artisan.metier || "Artisan",
+          artisan.commune
+        )
+      : null;
+
+  const photoProfil = artisan.avatar_url || artisan.photo_url;
+
+  const initiales = artisan.name
+    ? artisan.name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "A";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Link
         href="/artisans"
-        className="text-sm text-orange-600 hover:underline"
+        className="text-sm text-orange-600 hover:underline font-medium"
       >
         ← Retour aux artisans
       </Link>
 
-      <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="mt-4 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {artisan.photo_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={artisan.photo_url}
             alt={artisan.name}
-            className="w-full h-64 object-cover"
+            className="w-full h-56 object-cover"
           />
         )}
 
         <div className="p-6">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-3xl font-bold">{artisan.name}</h1>
-            {artisan.verifie && (
-              <span className="shrink-0 bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-                ✓ Vérifié
-              </span>
-            )}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {photoProfil ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoProfil}
+                  alt={artisan.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xl font-bold border border-orange-200 shrink-0">
+                  {initiales}
+                </div>
+              )}
+
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {artisan.name}
+                </h1>
+                {artisan.verifie && (
+                  <span className="mt-1 inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-0.5 rounded-full">
+                    ✓ Profil vérifié
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-600">
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
             {artisan.metier && (
-              <span className="bg-gray-100 px-3 py-1 rounded-full">
+              <span className="bg-orange-50 text-orange-700 font-medium px-3 py-1 rounded-full">
                 {artisan.metier}
               </span>
             )}
@@ -98,10 +124,10 @@ async function ArtisanContent({
           </div>
 
           {artisan.note && (
-            <p className="mt-3 text-sm text-gray-600">
+            <p className="mt-4 text-sm text-gray-600">
               <span className="text-yellow-500 font-semibold">
                 ★ {artisan.note}
-              </span>{' '}
+              </span>{" "}
               ({artisan.avis ?? 0} avis)
             </p>
           )}
@@ -118,15 +144,15 @@ async function ArtisanContent({
                 href={lienWhatsApp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg"
+                className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition"
               >
-                Contacter sur WhatsApp
+                💬 Discuter sur WhatsApp
               </a>
               <a
-                href={`tel:${artisan.telephone.replace(/\s/g, '')}`}
-                className="flex-1 text-center border border-gray-300 hover:bg-gray-50 font-semibold py-3 rounded-lg"
+                href={`tel:${artisan.telephone.replace(/\s/g, "")}`}
+                className="flex-1 text-center border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-xl transition"
               >
-                Appeler
+                📞 Appeler ({artisan.telephone})
               </a>
             </div>
           ) : (
@@ -137,5 +163,5 @@ async function ArtisanContent({
         </div>
       </div>
     </div>
-  )
+  );
 }
