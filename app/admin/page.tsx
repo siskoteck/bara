@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-// Remplacez par l'adresse e-mail de votre compte administrateur
 const ADMIN_EMAIL = "cv2tcv2t@gmail.com";
 
 interface ArtisanAdmin {
@@ -24,13 +23,31 @@ interface MessageContact {
   message: string;
 }
 
+interface BanniereAdmin {
+  id: number;
+  created_at: string;
+  partenaire: string;
+  image_url: string;
+  lien_destination: string;
+  emplacement: "accueil" | "annuaire";
+  active: boolean;
+  clics: number;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
   const [loading, setLoading] = useState(true);
   const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
   const [messages, setMessages] = useState<MessageContact[]>([]);
-  const [onglet, setOnglet] = useState<"artisans" | "messages">("artisans");
+  const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
+  const [onglet, setOnglet] = useState<"artisans" | "messages" | "publicites">("artisans");
+
+  const [partenaire, setPartenaire] = useState("");
+  const [lienDestination, setLienDestination] = useState("");
+  const [emplacement, setEmplacement] = useState<"accueil" | "annuaire">("accueil");
+  const [fichierPub, setFichierPub] = useState<File | null>(null);
+  const [envoiPub, setEnvoiPub] = useState(false);
 
   useEffect(() => {
     async function verifierEtCharger() {
@@ -44,28 +61,30 @@ export default function AdminPage() {
 
       setAutorise(true);
 
-      // Charger les artisans
-      const { data: listeArtisans } = await supabase
-        .from("artisans")
-        .select("id, name, metier, commune, telephone, verifie")
-        .order("id", { ascending: false });
+      const [resArtisans, resMessages, resBannieres] = await Promise.all([
+        supabase
+          .from("artisans")
+          .select("id, name, metier, commune, telephone, verifie")
+          .order("id", { ascending: false }),
+        supabase
+          .from("messages_contact")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("bannieres")
+          .select("*")
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (listeArtisans) setArtisans(listeArtisans);
-
-      // Charger les messages de contact
-      const { data: listeMessages } = await supabase
-        .from("messages_contact")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (listeMessages) setMessages(listeMessages);
+      if (resArtisans.data) setArtisans(resArtisans.data);
+      if (resMessages.data) setMessages(resMessages.data);
+      if (resBannieres.data) setBannieres(resBannieres.data as BanniereAdmin[]);
 
       setLoading(false);
     }
 
     verifierEtCharger();
   }, [router]);
-
   async function basculerVerification(artisan: ArtisanAdmin) {
     const nouveauStatut = !artisan.verifie;
 
@@ -97,6 +116,85 @@ export default function AdminPage() {
     }
   }
 
+  async function ajouterBanniere(e: React.FormEvent) {
+    e.preventDefault();
+    if (!partenaire.trim() || !lienDestination.trim() || !fichierPub) {
+      alert("Veuillez remplir tous les champs et choisir une image.");
+      return;
+    }
+
+    try {
+      setEnvoiPub(true);
+      const ext = fichierPub.name.split(".").pop() || "jpg";
+      const filePath = `${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("bannieres")
+        .upload(filePath, fichierPub);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("bannieres")
+        .getPublicUrl(filePath);
+
+      const { data: nouvellePub, error: insertError } = await supabase
+        .from("bannieres")
+        .insert([
+          {
+            partenaire: partenaire.trim(),
+            image_url: urlData.publicUrl,
+            lien_destination: lienDestination.trim(),
+            emplacement,
+            active: true,
+          },
+        ])
+        .select("*")
+        .single();
+
+      if (insertError) throw insertError;
+
+      if (nouvellePub) {
+        setBannieres((prev) => [nouvellePub as BanniereAdmin, ...prev]);
+      }
+
+      setPartenaire("");
+      setLienDestination("");
+      setFichierPub(null);
+      const inputFile = document.getElementById("input-pub-file") as HTMLInputElement;
+      if (inputFile) inputFile.value = "";
+    } catch (err: any) {
+      console.error("Erreur ajout bannière:", err);
+      alert("Erreur lors de l'ajout : " + (err.message || "Inconnue"));
+    } finally {
+      setEnvoiPub(false);
+    }
+  }
+
+  async function basculerEtatBanniere(pub: BanniereAdmin) {
+    const nouvelEtat = !pub.active;
+    const { error } = await supabase
+      .from("bannieres")
+      .update({ active: nouvelEtat })
+      .eq("id", pub.id);
+
+    if (!error) {
+      setBannieres((prev) =>
+        prev.map((b) => (b.id === pub.id ? { ...b, active: nouvelEtat } : b))
+      );
+    }
+  }
+
+  async function supprimerBanniere(id: number) {
+    if (!confirm("Supprimer définitivement cette publicité ?")) return;
+
+    const { error } = await supabase.from("bannieres").delete().eq("id", id);
+
+    if (!error) {
+      setBannieres((prev) => prev.filter((b) => b.id !== id));
+    }
+  }
+
   if (loading || !autorise) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">
@@ -115,7 +213,7 @@ export default function AdminPage() {
       </div>
 
       {/* Onglets */}
-      <div className="flex gap-3 mb-8 border-b border-gray-200 pb-4">
+      <div className="flex flex-wrap gap-3 mb-8 border-b border-gray-200 pb-4">
         <button
           onClick={() => setOnglet("artisans")}
           className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
@@ -137,9 +235,20 @@ export default function AdminPage() {
         >
           Messages contact ({messages.length})
         </button>
+
+        <button
+          onClick={() => setOnglet("publicites")}
+          className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+            onglet === "publicites"
+              ? "bg-orange-600 text-white"
+              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Publicités ({bannieres.length})
+        </button>
       </div>
 
-      {/* Onglet Artisans */}
+      {/* Onglet 1 : Artisans */}
       {onglet === "artisans" && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="divide-y divide-gray-100">
@@ -179,7 +288,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Onglet Messages */}
+      {/* Onglet 2 : Messages */}
       {onglet === "messages" && (
         <div className="space-y-4">
           {messages.length === 0 ? (
@@ -212,6 +321,149 @@ export default function AdminPage() {
               </div>
             ))
           )}
+        </div>
+      )}
+      {/* Onglet 3 : Publicités */}
+      {onglet === "publicites" && (
+        <div className="space-y-8">
+          <form
+            onSubmit={ajouterBanniere}
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">
+              Ajouter une bannière partenaire
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Nom du partenaire / annonceur *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={partenaire}
+                  onChange={(e) => setPartenaire(e.target.value)}
+                  placeholder="Ex: Quincaillerie Treichville Pro"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Emplacement sur le site *
+                </label>
+                <select
+                  value={emplacement}
+                  onChange={(e) =>
+                    setEmplacement(e.target.value as "accueil" | "annuaire")
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                >
+                  <option value="accueil">Page d&apos;accueil</option>
+                  <option value="annuaire">Page Annuaire (/artisans)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Lien au clic (WhatsApp, Facebook ou site) *
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={lienDestination}
+                  onChange={(e) => setLienDestination(e.target.value)}
+                  placeholder="https://wa.me"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Image bannière (format recommandé : 1200x300 px) *
+                </label>
+                <input
+                  id="input-pub-file"
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => setFichierPub(e.target.files?.[0] || null)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={envoiPub}
+              className="bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 disabled:opacity-50"
+            >
+              {envoiPub ? "Publication en cours..." : "Publier la bannière"}
+            </button>
+          </form>
+
+          {/* Liste des bannières existantes */}
+          <div className="space-y-4">
+            {bannieres.length === 0 ? (
+              <div className="bg-white rounded-2xl border p-8 text-center text-gray-500">
+                Aucune bannière publicitaire enregistrée.
+              </div>
+            ) : (
+              bannieres.map((pub) => (
+                <div
+                  key={pub.id}
+                  className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4 w-full sm:w-auto">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pub.image_url}
+                      alt={pub.partenaire}
+                      className="w-28 h-14 object-cover rounded-lg border border-gray-200 shrink-0"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-gray-900">
+                          {pub.partenaire}
+                        </h3>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            pub.active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {pub.active ? "Active" : "En pause"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Emplacement : <strong>{pub.emplacement}</strong> •{" "}
+                        <strong>{pub.clics ?? 0} clics</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => basculerEtatBanniere(pub)}
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-50"
+                    >
+                      {pub.active ? "Mettre en pause" : "Activer"}
+                    </button>
+                    <button
+                      onClick={() => supprimerBanniere(pub.id)}
+                      className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
