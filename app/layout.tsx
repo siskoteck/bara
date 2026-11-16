@@ -21,7 +21,9 @@ export default function RootLayout({
         <Suspense fallback={<div className="h-16" />}>
           <Header />
         </Suspense>
-        <main className="flex-1">{children}</main>
+        <Suspense fallback={<div className="flex-1" />}>
+          <main className="flex-1">{children}</main>
+        </Suspense>
         <Footer />
       </body>
     </html>
