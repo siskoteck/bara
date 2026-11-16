@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+const NUMERO_SUPPORT = "2250707249678";
+const MESSAGE_SUPPORT = encodeURIComponent(
+  "Bonjour l'équipe BARA, j'ai besoin d'assistance."
+);
+const URL_WHATSAPP_SUPPORT = `https://whatsapp.com{NUMERO_SUPPORT}&text=${MESSAGE_SUPPORT}`;
+
 export default function ContactPage() {
   const [envoye, setEnvoye] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,23 +32,10 @@ export default function ContactPage() {
     if (insertError) {
       console.error("Erreur envoi message:", insertError);
       setError(
-        "Impossible d'envoyer votre message. Réessayez ou écrivez-nous sur WhatsApp."
+        "Impossible d'enregistrer votre message. Écrivez-nous directement sur WhatsApp."
       );
       setLoading(false);
       return;
-    }
-
-    try {
-      await fetch("/api/notifier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sujet: `📩 Nouveau message Contact BARA de ${nom}`,
-          contenu: `Nom : ${nom}\nContact : ${contact}\n\nMessage :\n${message}`,
-        }),
-      });
-    } catch (mailError) {
-      console.error("Erreur notification e-mail:", mailError);
     }
 
     setEnvoye(true);
@@ -75,7 +68,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href="https://whatsapp.com."
+            href={URL_WHATSAPP_SUPPORT}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-green-600 font-semibold text-sm mt-1 hover:underline"
