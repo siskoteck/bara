@@ -16,15 +16,17 @@ export default function DemandePage() {
     setError("");
 
     const formData = new FormData(e.currentTarget);
+    const metierChoisi = formData.get("categorie") as string;
+    const communeChoisie = formData.get("quartier") as string;
 
     const nouvelleDemande = {
-      titre: `${formData.get("categorie")} - ${formData.get("quartier")}`,
-      metier: formData.get("categorie") as string,
-      "Quartier / commune": formData.get("quartier") as string,
-      "Description du besoin": formData.get("description") as string,
-      telephone: formData.get("telephone") as string,
-      budget: (formData.get("budget") as string) || null,
-      categorie: formData.get("categorie") as string,
+      titre: `${metierChoisi} - ${communeChoisie}`,
+      metier: metierChoisi,
+      "Quartier / commune": communeChoisie,
+      "Description du besoin": (formData.get("description") as string).trim(),
+      telephone: (formData.get("telephone") as string).trim(),
+      budget: ((formData.get("budget") as string) || "").trim() || null,
+      categorie: metierChoisi,
       statut: "ouverte",
     };
 
@@ -48,7 +50,7 @@ export default function DemandePage() {
           <div className="text-5xl mb-4">✅</div>
           <h1 className="text-2xl font-bold mb-3">Demande envoyée !</h1>
           <p className="text-gray-600 mb-8">
-            Des artisans vont bientôt vous contacter.
+            Des artisans qualifiés vont bientôt vous contacter.
           </p>
           <Link
             href="/"
@@ -68,39 +70,30 @@ export default function DemandePage() {
         Décrivez votre besoin, des artisans qualifiés vous répondront.
       </p>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border p-8 space-y-6">
-        {/* Type de travaux */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl shadow-sm border p-8 space-y-6"
+      >
+        {/* Métier recherché (depuis lib/constantes.ts) */}
         <div>
           <label htmlFor="categorie" className="block text-sm font-medium mb-2">
-            Type de travaux *
+            Métier recherché *
           </label>
           <select
             id="categorie"
             name="categorie"
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+            defaultValue=""
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
           >
-            <option value="">Choisir une catégorie</option>
-            <option value="Plomberie">Plomberie</option>
-            <option value="Électricité">Électricité</option>
-            <option value="Maçonnerie">Maçonnerie</option>
-            <option value="Peinture">Peinture</option>
-            <option value="Climatisation">Climatisation</option>
-            <option value="Menuiserie">Menuiserie</option>
-            <option value="Carrelage">Carrelage</option>
-            <option value="Serrurerie">Serrurerie</option>
-            <option value="Fer forgé">Fer forgé</option>
-            <option value="Plâtrerie">Plâtrerie</option>
-            <option value="Carrelage & Faïence">Carrelage & Faïence</option>
-            <option value="Étanchéité">Étanchéité</option>
-            <option value="Charpente">Charpente</option>
-            <option value="Couverture">Couverture</option>
-            <option value="Vitrerie">Vitrerie</option>
-            <option value="Aluminium">Aluminium</option>
-            <option value="Nettoyage">Nettoyage</option>
-            <option value="Jardinage">Jardinage</option>
-            <option value="Déménagement">Déménagement</option>
-            <option value="Autre">Autre</option>
+            <option value="" disabled>
+              Choisir un métier
+            </option>
+            {METIERS.map((metier) => (
+              <option key={metier} value={metier}>
+                {metier}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -119,50 +112,41 @@ export default function DemandePage() {
           />
         </div>
 
-        {/* Quartier / Commune */}
+        {/* Commune (depuis lib/constantes.ts) */}
         <div>
           <label htmlFor="quartier" className="block text-sm font-medium mb-2">
-            Quartier / Commune *
+            Commune à Abidjan *
           </label>
           <select
             id="quartier"
             name="quartier"
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+            defaultValue=""
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
           >
-            <option value="">Sélectionner</option>
-            <option value="Abobo">Abobo</option>
-            <option value="Adjamé">Adjamé</option>
-            <option value="Attécoubé">Attécoubé</option>
-            <option value="Cocody">Cocody</option>
-            <option value="Koumassi">Koumassi</option>
-            <option value="Marcory">Marcory</option>
-            <option value="Plateau">Plateau</option>
-            <option value="Port-Bouët">Port-Bouët</option>
-            <option value="Treichville">Treichville</option>
-            <option value="Yopougon">Yopougon</option>
-            <option value="Anyama">Anyama</option>
-            <option value="Bingerville">Bingerville</option>
-            <option value="Songon">Songon</option>
-            <option value="Brofodoumé">Brofodoumé</option>
-            <option value="Grand-Bassam">Grand-Bassam</option>
-            <option value="Bonoua">Bonoua</option>
-            <option value="Dabou">Dabou</option>
-            <option value="Jacqueville">Jacqueville</option>
-            <option value="Autre">Autre</option>
+            <option value="" disabled>
+              Choisir une commune
+            </option>
+            {COMMUNES.map((commune) => (
+              <option key={commune} value={commune}>
+                {commune}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* Téléphone */}
         <div>
           <label htmlFor="telephone" className="block text-sm font-medium mb-2">
-            Votre numéro de téléphone *
+            Votre numéro de téléphone (WhatsApp) *
           </label>
           <input
             id="telephone"
             name="telephone"
             type="tel"
             required
+            pattern="[0-9 +]{8,16}"
+            title="Entrez un numéro valide, par exemple 07 00 00 00 00"
             placeholder="07 00 00 00 00"
             className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
           />
