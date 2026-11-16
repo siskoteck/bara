@@ -4,12 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-const NUMERO_SUPPORT = "2250707249678";
-const MESSAGE_SUPPORT = encodeURIComponent(
-  "Bonjour l'équipe BARA, j'ai besoin d'assistance."
-);
-const URL_WHATSAPP_SUPPORT = `https://whatsapp.com{NUMERO_SUPPORT}&text=${MESSAGE_SUPPORT}`;
-
 export default function ContactPage() {
   const [envoye, setEnvoye] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,7 +62,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href={URL_WHATSAPP_SUPPORT}
+            href="https://whatsapp.com"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-green-600 font-semibold text-sm mt-1 hover:underline"
