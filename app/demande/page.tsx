@@ -68,6 +68,7 @@ export default function DemandePage() {
       </p>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border p-8 space-y-6">
+        {/* Type de travaux */}
         <div>
           <label htmlFor="categorie" className="block text-sm font-medium mb-2">
             Type de travaux *
@@ -87,10 +88,22 @@ export default function DemandePage() {
             <option value="Menuiserie">Menuiserie</option>
             <option value="Carrelage">Carrelage</option>
             <option value="Serrurerie">Serrurerie</option>
+            <option value="Fer forgé">Fer forgé</option>
+            <option value="Plâtrerie">Plâtrerie</option>
+            <option value="Carrelage & Faïence">Carrelage & Faïence</option>
+            <option value="Étanchéité">Étanchéité</option>
+            <option value="Charpente">Charpente</option>
+            <option value="Couverture">Couverture</option>
+            <option value="Vitrerie">Vitrerie</option>
+            <option value="Aluminium">Aluminium</option>
+            <option value="Nettoyage">Nettoyage</option>
+            <option value="Jardinage">Jardinage</option>
+            <option value="Déménagement">Déménagement</option>
             <option value="Autre">Autre</option>
           </select>
         </div>
 
+        {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium mb-2">
             Description du besoin *
@@ -105,6 +118,7 @@ export default function DemandePage() {
           />
         </div>
 
+        {/* Quartier / Commune */}
         <div>
           <label htmlFor="quartier" className="block text-sm font-medium mb-2">
             Quartier / Commune *
@@ -116,19 +130,29 @@ export default function DemandePage() {
             className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
           >
             <option value="">Sélectionner</option>
-            <option value="Cocody">Cocody</option>
-            <option value="Yopougon">Yopougon</option>
             <option value="Abobo">Abobo</option>
+            <option value="Adjamé">Adjamé</option>
+            <option value="Attécoubé">Attécoubé</option>
+            <option value="Cocody">Cocody</option>
+            <option value="Koumassi">Koumassi</option>
             <option value="Marcory">Marcory</option>
             <option value="Plateau">Plateau</option>
-            <option value="Koumassi">Koumassi</option>
-            <option value="Treichville">Treichville</option>
-            <option value="Adjamé">Adjamé</option>
             <option value="Port-Bouët">Port-Bouët</option>
+            <option value="Treichville">Treichville</option>
+            <option value="Yopougon">Yopougon</option>
+            <option value="Anyama">Anyama</option>
+            <option value="Bingerville">Bingerville</option>
+            <option value="Songon">Songon</option>
+            <option value="Brofodoumé">Brofodoumé</option>
+            <option value="Grand-Bassam">Grand-Bassam</option>
+            <option value="Bonoua">Bonoua</option>
+            <option value="Dabou">Dabou</option>
+            <option value="Jacqueville">Jacqueville</option>
             <option value="Autre">Autre</option>
           </select>
         </div>
 
+        {/* Téléphone */}
         <div>
           <label htmlFor="telephone" className="block text-sm font-medium mb-2">
             Votre numéro de téléphone *
@@ -143,6 +167,7 @@ export default function DemandePage() {
           />
         </div>
 
+        {/* Budget */}
         <div>
           <label htmlFor="budget" className="block text-sm font-medium mb-2">
             Budget approximatif (optionnel)
