@@ -1,259 +1,176 @@
-"use client";
-
+import { Suspense } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { METIERS, COMMUNES } from "@/lib/constantes";
-import { AvatarUpload } from "@/components/AvatarUpload";
+import { notFound } from "next/navigation";
+import { createSupabaseClient } from "@/lib/supabase";
+import { genererLienWhatsApp } from "@/lib/whatsapp";
 
-type Fiche = {
-  id: number;
-  name: string | null;
-  metier: string | null;
-  commune: string | null;
-  description: string | null;
-  telephone: string | null;
-  avatar_url: string | null;
-};
-
-export default function MonProfilPage() {
-  const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [fiche, setFiche] = useState<Fiche | null>(null);
-  const [chargement, setChargement] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [succes, setSucces] = useState(false);
-
-  useEffect(() => {
-    async function charger() {
-      const { data } = await supabase.auth.getSession();
-      const user = data.session?.user;
-
-      if (!user) {
-        router.replace("/auth/login");
-        return;
-      }
-
-      setUserId(user.id);
-
-      const { data: ligne, error: erreur } = await supabase
-        .from("artisans")
-        .select("id, name, metier, commune, description, telephone, avatar_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (erreur) {
-        console.error("Erreur chargement fiche:", erreur);
-        setError("Impossible de charger votre fiche.");
-      }
-
-      setFiche(ligne);
-      setChargement(false);
-    }
-
-    charger();
-  }, [router]);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!userId) return;
-
-    setSaving(true);
-    setError("");
-    setSucces(false);
-
-    const formData = new FormData(e.currentTarget);
-    const miseAJour = {
-      name: (formData.get("name") as string).trim(),
-      metier: formData.get("metier") as string,
-      commune: (formData.get("commune") as string) || null,
-      description: ((formData.get("description") as string) || "").trim() || null,
-      telephone: (formData.get("telephone") as string).trim(),
-    };
-
-    try {
-      const { data, error: updateError } = await supabase
-        .from("artisans")
-        .update(miseAJour)
-        .eq("user_id", userId)
-        .select("id");
-
-      if (updateError) throw updateError;
-
-      if (!data || data.length === 0) {
-        throw new Error("Modification refusée. Reconnectez-vous et réessayez.");
-      }
-
-      setFiche((prev) => (prev ? { ...prev, ...miseAJour } : null));
-      setSucces(true);
-    } catch (err: any) {
-      console.error("Erreur mise à jour fiche:", err);
-      setError(err.message || "Une erreur est survenue");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (chargement) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-gray-500">
-        Chargement…
-      </div>
-    );
-  }
-
-  if (!fiche) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
-          <h1 className="text-xl font-bold mb-2">Pas de fiche artisan</h1>
-          <p className="text-gray-600 mb-6">
-            Votre compte n&apos;est pas un compte artisan, donc il n&apos;a pas de fiche à
-            modifier.
-          </p>
-          <Link href="/artisans" className="text-orange-600 font-medium hover:underline">
-            Voir les artisans
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+export default function ArtisanPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
-      <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
-        <h1 className="text-2xl font-bold mb-1">Mon profil</h1>
-        <p className="text-gray-600 mb-6">
-          Complétez votre fiche : c&apos;est ce que voient les clients avant de vous
-          contacter sur WhatsApp.
-        </p>
+    <Suspense
+      fallback={<div className="container mx-auto px-4 py-8">Chargement…</div>}
+    >
+      <ArtisanContent params={params} />
+    </Suspense>
+  );
+}
 
-        {userId && (
-          <div className="mb-6">
-            <AvatarUpload
-              userId={userId}
-              nom={fiche.name ?? "Artisan"}
-              urlActuelle={fiche.avatar_url}
-              onUpload={(nouvelleUrl) =>
-                setFiche((prev) =>
-                  prev ? { ...prev, avatar_url: nouvelleUrl } : null
-                )
-              }
-            />
-          </div>
+async function ArtisanContent({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const supabase = createSupabaseClient();
+
+  const { data: artisan, error } = await supabase
+    .from("artisans")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erreur Supabase:", error);
+  }
+
+  if (error || !artisan) {
+    notFound();
+  }
+
+  const lienWhatsApp =
+    artisan.telephone && artisan.telephone.replace(/\D/g, "").length >= 8
+      ? genererLienWhatsApp(
+          artisan.telephone,
+          artisan.name,
+          artisan.metier || "Artisan",
+          artisan.commune
+        )
+      : null;
+
+  const photoProfil = artisan.avatar_url || artisan.photo_url;
+
+  const initiales = artisan.name
+    ? artisan.name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "A";
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Link
+        href="/artisans"
+        className="text-sm text-orange-600 hover:underline font-medium"
+      >
+        ← Retour aux artisans
+      </Link>
+
+      <div className="mt-4 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {artisan.photo_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={artisan.photo_url}
+            alt={artisan.name}
+            className="w-full h-56 object-cover"
+          />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
-              Nom complet
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              defaultValue={fiche.name ?? ""}
-              autoComplete="name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-            />
-          </div>
+        <div className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {photoProfil ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoProfil}
+                  alt={artisan.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xl font-bold border border-orange-200 shrink-0">
+                  {initiales}
+                </div>
+              )}
 
-          <div>
-            <label htmlFor="metier" className="block text-sm font-medium mb-1">
-              Métier principal
-            </label>
-            <select
-              id="metier"
-              name="metier"
-              defaultValue={fiche.metier ?? METIERS}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
-            >
-              {METIERS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="commune" className="block text-sm font-medium mb-1">
-              Commune
-            </label>
-            <select
-              id="commune"
-              name="commune"
-              defaultValue={fiche.commune ?? ""}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
-            >
-              <option value="">Choisir une commune</option>
-              {COMMUNES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="telephone" className="block text-sm font-medium mb-1">
-              Numéro WhatsApp
-            </label>
-            <input
-              id="telephone"
-              name="telephone"
-              type="tel"
-              required
-              defaultValue={fiche.telephone ?? ""}
-              autoComplete="tel"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              placeholder="07 00 00 00 00"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium mb-1">
-              Présentation
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={5}
-              defaultValue={fiche.description ?? ""}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              placeholder="Vos services, votre expérience, vos zones d'intervention…"
-            />
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-              {error}
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {artisan.name}
+                </h1>
+                {artisan.verifie && (
+                  <span className="mt-1 inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-0.5 rounded-full">
+                    ✓ Profil vérifié
+                  </span>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Badges Métier, Commune + Quartier et Disponibilité */}
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
+            {artisan.metier && (
+              <span className="bg-orange-50 text-orange-700 font-medium px-3 py-1 rounded-full">
+                {artisan.metier}
+              </span>
+            )}
+            {artisan.commune && (
+              <span className="bg-gray-100 px-3 py-1 rounded-full">
+                📍 {artisan.commune}
+                {artisan.quartier ? ` (${artisan.quartier})` : ""}
+              </span>
+            )}
+            {artisan.disponible !== false ? (
+              <span className="bg-green-50 text-green-700 border border-green-200 font-medium px-3 py-1 rounded-full">
+                🟢 Disponible
+              </span>
+            ) : (
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 font-medium px-3 py-1 rounded-full">
+                🟠 Occupé actuellement
+              </span>
+            )}
+          </div>
+
+          {artisan.note && (
+            <p className="mt-4 text-sm text-gray-600">
+              <span className="text-yellow-500 font-semibold">
+                ★ {artisan.note}
+              </span>{" "}
+              ({artisan.avis ?? 0} avis)
+            </p>
           )}
 
-          {succes && (
-            <div className="text-green-700 text-sm bg-green-50 p-3 rounded-lg">
-              Votre fiche a été mise à jour.{" "}
-              <Link
-                href={`/artisans/${fiche.id}`}
-                className="font-medium underline"
+          {artisan.description && (
+            <p className="mt-6 text-gray-700 leading-relaxed whitespace-pre-line">
+              {artisan.description}
+            </p>
+          )}
+
+          {lienWhatsApp ? (
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a
+                href={lienWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition"
               >
-                Voir ma fiche publique
-              </Link>
+                💬 Discuter sur WhatsApp
+              </a>
+              <a
+                href={`tel:${artisan.telephone.replace(/\s/g, "")}`}
+                className="flex-1 text-center border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-xl transition"
+              >
+                📞 Appeler ({artisan.telephone})
+              </a>
             </div>
+          ) : (
+            <p className="mt-8 text-sm text-gray-500">
+              Cet artisan n&apos;a pas encore renseigné de numéro de téléphone.
+            </p>
           )}
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:opacity-50"
-          >
-            {saving ? "Enregistrement…" : "Enregistrer"}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );
