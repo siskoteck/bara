@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { METIERS, COMMUNES } from "@/lib/constantes";
+import { genererLienWhatsApp } from "@/lib/whatsapp";
 
-// Associe une icône à chaque métier exact de lib/constantes.ts
+export const revalidate = 60;
+
 const ICONES_METIERS: Record<string, string> = {
   "Plombier": "🔧",
   "Électricien": "⚡",
@@ -25,10 +28,15 @@ const ICONES_METIERS: Record<string, string> = {
   "Autre": "🛠️",
 };
 
-// On affiche les 12 premiers métiers de lib/constantes.ts (sans "Autre")
 const CATEGORIES_ACCUEIL = METIERS.filter((m) => m !== "Autre").slice(0, 12);
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { data: artisansRecommandes } = await supabase
+    .from("artisans")
+    .select("id, name, metier, commune, telephone, avatar_url, verifie")
+    .order("verifie", { ascending: false })
+    .limit(6);
+
   return (
     <div>
       {/* Hero Section avec barre de recherche rapide */}
@@ -41,7 +49,6 @@ export default function HomePage() {
             Plombiers, électriciens, maçons, peintres… Trouvez le bon professionnel rapidement.
           </p>
 
-          {/* Barre de recherche rapide : Métier + Commune */}
           <form
             action="/artisans"
             method="GET"
@@ -93,7 +100,6 @@ export default function HomePage() {
             </button>
           </form>
 
-          {/* Lien secondaire vers le dépôt de demande */}
           <div className="mt-6 text-sm text-orange-100">
             Vous préférez recevoir des devis ?{" "}
             <Link
@@ -136,64 +142,111 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Comment ça marche */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Comment ça marche ?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                1
+      {/* Artisans recommandés à Abidjan */}
+      {artisansRecommandes && artisansRecommandes.length > 0 && (
+        <section className="py-16 bg-orange-50/50 border-t border-b border-orange-100">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Artisans recommandés à Abidjan
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Des professionnels disponibles dans votre commune
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Décrivez votre besoin</h3>
-              <p className="text-gray-600">
-                Expliquez ce dont vous avez besoin et votre quartier à Abidjan.
-              </p>
+              <Link
+                href="/artisans"
+                className="text-orange-600 font-medium hover:underline text-sm"
+              >
+                Voir tout l&apos;annuaire →
+              </Link>
             </div>
 
-            <div className="text-center">
-              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                2
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Recevez des propositions</h3>
-              <p className="text-gray-600">
-                Des artisans qualifiés vous contactent rapidement.
-              </p>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {artisansRecommandes.map((artisan) => {
+                const initiales = artisan.name
+                  ? artisan.name
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : "A";
 
-            <div className="text-center">
-              <div className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                3
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Choisissez et notez</h3>
-              <p className="text-gray-600">
-                Sélectionnez l’artisan et laissez un avis après le travail.
-              </p>
+                return (
+                  <div
+                    key={artisan.id}
+                    className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-4 mb-4">
+                        {artisan.avatar_url ? (
+                          <img
+                            src={artisan.avatar_url}
+                            alt={artisan.name}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-orange-500"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-bold border border-orange-200 shrink-0">
+                            {initiales}
+                          </div>
+                        )}
+
+                        <div>
+                          <h3 className="font-bold text-lg text-gray-900">
+                            {artisan.name}
+                          </h3>
+                          <p className="text-orange-600 font-medium text-sm">
+                            {artisan.metier}
+                          </p>
+                          {artisan.commune && (
+                            <p className="text-gray-500 text-xs mt-0.5">
+                              📍 {artisan.commune}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {artisan.verifie && (
+                        <div className="mb-4">
+                          <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                            <span>✓</span> Profil vérifié
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Link
+                        href={`/artisans/${artisan.id}`}
+                        className="flex-1 text-center py-2.5 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition"
+                      >
+                        Voir le profil
+                      </Link>
+                      {artisan.telephone && (
+                        <a
+                          href={genererLienWhatsApp(
+                            artisan.telephone,
+                            artisan.name,
+                            artisan.metier,
+                            artisan.commune
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 text-center py-2.5 px-3 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition"
+                        >
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* CTA final */}
-      <section className="py-16 bg-orange-600 text-white text-center">
-        <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">
-            Vous êtes artisan ?
-          </h2>
-          <p className="text-xl mb-8 text-orange-100">
-            Rejoignez BARA et développez votre activité à Abidjan.
-          </p>
-          <Link
-            href="/auth/register"
-            className="bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50"
-          >
-            Créer mon profil artisan
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-}
+      {/* Comment ça marche */}
+      <section className="py-16 bg-gray-50">
