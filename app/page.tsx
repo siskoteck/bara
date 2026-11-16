@@ -1,4 +1,32 @@
 import Link from "next/link";
+import { METIERS } from "@/lib/constantes";
+
+// Associe une icône à chaque métier exact de lib/constantes.ts
+const ICONES_METIERS: Record<string, string> = {
+  "Plombier": "🔧",
+  "Électricien": "⚡",
+  "Maçon": "🧱",
+  "Peintre": "🎨",
+  "Menuisier": "🪚",
+  "Carreleur": "🔲",
+  "Soudeur / Ferronnier": "🔥",
+  "Charpentier / Couvreur": "🏠",
+  "Plaquiste": "📐",
+  "Vitrier / Aluminium": "🪟",
+  "Climatisation / Froid": "❄️",
+  "Réparateur électroménager": "🧺",
+  "Mécanicien auto": "🚗",
+  "Technicien informatique": "💻",
+  "Jardinier / Paysagiste": "🌿",
+  "Nettoyage / Ménage": "🧹",
+  "Déménageur": "🚚",
+  "Couturier / Tailleur": "🧵",
+  "Coiffeur / Coiffeuse": "✂️",
+  "Autre": "🛠️",
+};
+
+// On affiche les 12 premiers métiers de lib/constantes.ts (sans "Autre")
+const CATEGORIES_ACCUEIL = METIERS.filter((m) => m !== "Autre").slice(0, 12);
 
 export default function HomePage() {
   return (
@@ -30,37 +58,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Catégories */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-10">
-            Catégories populaires
-          </h2>
+      {/* Catégories populaires */}
+      <section className="py-16 px-4 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">Catégories populaires</h2>
+          <Link
+            href="/artisans"
+            className="text-orange-600 font-medium hover:underline text-sm"
+          >
+            Voir tous les métiers →
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              "Plomberie",
-              "Électricité",
-              "Maçonnerie",
-              "Peinture",
-              "Climatisation",
-              "Menuiserie",
-              "Carrelage",
-              "Serrurerie",
-               "Informatique",
-                "Reparation téléphone",
-                 "Mecanique auto",
-                  "Climatisation automobile",
-            ].map((cat) => (
-              <Link
-                key={cat}
-                href={`/artisans?categorie=${cat.toLowerCase()}`}
-                className="bg-gray-50 hover:bg-orange-50 border border-gray-200 rounded-xl p-6 text-center transition"
-              >
-                <div className="text-lg font-medium text-gray-800">{cat}</div>
-              </Link>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {CATEGORIES_ACCUEIL.map((metier) => (
+            <Link
+              key={metier}
+              href={`/artisans?metier=${encodeURIComponent(metier)}`}
+              className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-orange-500 hover:shadow-md transition text-center group"
+            >
+              <span className="text-3xl mb-3 group-hover:scale-110 transition-transform">
+                {ICONES_METIERS[metier] || "🛠️"}
+              </span>
+              <span className="font-medium text-gray-800 group-hover:text-orange-600">
+                {metier}
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 

@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BARA - Brobro un artisan de confiance à Abidjan",
+  title: "BARA - Trouvez un artisan de confiance à Abidjan",
   description:
     "Plateforme de mise en relation entre artisans et particuliers à Abidjan. Trouvez rapidement un plombier, électricien, maçon et plus encore.",
 };
