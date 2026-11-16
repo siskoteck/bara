@@ -23,6 +23,15 @@ interface MessageContact {
   message: string;
 }
 
+interface AvisAdmin {
+  id: number;
+  created_at: string;
+  artisan_id: number;
+  auteur_nom: string;
+  note: number;
+  commentaire: string;
+}
+
 interface BanniereAdmin {
   id: number;
   created_at: string;
@@ -40,15 +49,17 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
   const [messages, setMessages] = useState<MessageContact[]>([]);
+  const [avisListe, setAvisListe] = useState<AvisAdmin[]>([]);
   const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
-  const [onglet, setOnglet] = useState<"artisans" | "messages" | "publicites">("artisans");
+  const [onglet, setOnglet] = useState<
+    "artisans" | "messages" | "avis" | "publicites"
+  >("artisans");
 
   const [partenaire, setPartenaire] = useState("");
   const [lienDestination, setLienDestination] = useState("");
   const [emplacement, setEmplacement] = useState<"accueil" | "annuaire">("accueil");
   const [fichierPub, setFichierPub] = useState<File | null>(null);
   const [envoiPub, setEnvoiPub] = useState(false);
-
   useEffect(() => {
     async function verifierEtCharger() {
       const { data } = await supabase.auth.getSession();
@@ -61,23 +72,29 @@ export default function AdminPage() {
 
       setAutorise(true);
 
-      const [resArtisans, resMessages, resBannieres] = await Promise.all([
-        supabase
-          .from("artisans")
-          .select("id, name, metier, commune, telephone, verifie")
-          .order("id", { ascending: false }),
-        supabase
-          .from("messages_contact")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("bannieres")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
+      const [resArtisans, resMessages, resAvis, resBannieres] =
+        await Promise.all([
+          supabase
+            .from("artisans")
+            .select("id, name, metier, commune, telephone, verifie")
+            .order("id", { ascending: false }),
+          supabase
+            .from("messages_contact")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("avis")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("bannieres")
+            .select("*")
+            .order("created_at", { ascending: false }),
+        ]);
 
       if (resArtisans.data) setArtisans(resArtisans.data);
       if (resMessages.data) setMessages(resMessages.data);
+      if (resAvis.data) setAvisListe(resAvis.data as AvisAdmin[]);
       if (resBannieres.data) setBannieres(resBannieres.data as BanniereAdmin[]);
 
       setLoading(false);
@@ -85,6 +102,7 @@ export default function AdminPage() {
 
     verifierEtCharger();
   }, [router]);
+
   async function basculerVerification(artisan: ArtisanAdmin) {
     const nouveauStatut = !artisan.verifie;
 
@@ -103,8 +121,30 @@ export default function AdminPage() {
     );
   }
 
+  async function supprimerArtisan(artisan: ArtisanAdmin) {
+    if (
+      !confirm(
+        `Supprimer définitivement le profil de "${artisan.name}" ? Cette action est irréversible.`
+      )
+    ) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("artisans")
+      .delete()
+      .eq("id", artisan.id);
+
+    if (error) {
+      alert("Erreur lors de la suppression : " + error.message);
+      return;
+    }
+
+    setArtisans((prev) => prev.filter((a) => a.id !== artisan.id));
+  }
+
   async function supprimerMessage(id: number) {
-    if (!confirm("Supprimer ce message ?")) return;
+    if (!confirm("Supprimer ce message de contact ?")) return;
 
     const { error } = await supabase
       .from("messages_contact")
@@ -116,6 +156,18 @@ export default function AdminPage() {
     }
   }
 
+  async function supprimerAvis(id: number) {
+    if (!confirm("Supprimer cet avis client ?")) return;
+
+    const { error } = await supabase.from("avis").delete().eq("id", id);
+
+    if (error) {
+      alert("Erreur lors de la suppression de l'avis : " + error.message);
+      return;
+    }
+
+    setAvisListe((prev) => prev.filter((a) => a.id !== id));
+  }
   async function ajouterBanniere(e: React.FormEvent) {
     e.preventDefault();
     if (!partenaire.trim() || !lienDestination.trim() || !fichierPub) {
@@ -216,7 +268,7 @@ export default function AdminPage() {
       <div className="flex flex-wrap gap-3 mb-8 border-b border-gray-200 pb-4">
         <button
           onClick={() => setOnglet("artisans")}
-          className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
             onglet === "artisans"
               ? "bg-orange-600 text-white"
               : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -227,18 +279,29 @@ export default function AdminPage() {
 
         <button
           onClick={() => setOnglet("messages")}
-          className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
             onglet === "messages"
               ? "bg-orange-600 text-white"
               : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
           }`}
         >
-          Messages contact ({messages.length})
+          Messages ({messages.length})
+        </button>
+
+        <button
+          onClick={() => setOnglet("avis")}
+          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
+            onglet === "avis"
+              ? "bg-orange-600 text-white"
+              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Avis clients ({avisListe.length})
         </button>
 
         <button
           onClick={() => setOnglet("publicites")}
-          className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition ${
+          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
             onglet === "publicites"
               ? "bg-orange-600 text-white"
               : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -247,7 +310,6 @@ export default function AdminPage() {
           Publicités ({bannieres.length})
         </button>
       </div>
-
       {/* Onglet 1 : Artisans */}
       {onglet === "artisans" && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -272,16 +334,25 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => basculerVerification(artisan)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition shrink-0 ${
-                    artisan.verifie
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }`}
-                >
-                  {artisan.verifie ? "Retirer le badge" : "Valider le profil ✓"}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => basculerVerification(artisan)}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition ${
+                      artisan.verifie
+                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                  >
+                    {artisan.verifie ? "Retirer badge" : "Valider ✓"}
+                  </button>
+
+                  <button
+                    onClick={() => supprimerArtisan(artisan)}
+                    className="px-3.5 py-2 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition"
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -310,7 +381,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => supprimerMessage(msg.id)}
-                    className="text-xs text-red-600 hover:underline"
+                    className="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
                   >
                     Supprimer
                   </button>
@@ -323,7 +394,48 @@ export default function AdminPage() {
           )}
         </div>
       )}
-      {/* Onglet 3 : Publicités */}
+
+      {/* Onglet 3 : Modération des avis clients */}
+      {onglet === "avis" && (
+        <div className="space-y-4">
+          {avisListe.length === 0 ? (
+            <div className="bg-white rounded-2xl border p-8 text-center text-gray-500">
+              Aucun avis publié pour le moment.
+            </div>
+          ) : (
+            avisListe.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-900">{item.auteur_nom}</h3>
+                      <span className="text-yellow-500 text-sm">
+                        {"★".repeat(item.note)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Fiche artisan #{item.artisan_id}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => supprimerAvis(item.id)}
+                    className="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
+                  >
+                    Supprimer l&apos;avis
+                  </button>
+                </div>
+                <p className="text-gray-700 text-sm mt-3 whitespace-pre-line">
+                  {item.commentaire}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+      {/* Onglet 4 : Publicités */}
       {onglet === "publicites" && (
         <div className="space-y-8">
           <form
