@@ -5,11 +5,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { telephoneVersEmail } from "@/lib/auth";
+import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +32,7 @@ export default function LoginPage() {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: { captchaToken: captchaToken ?? undefined },
       });
 
       if (signInError) throw signInError;
@@ -37,8 +41,10 @@ export default function LoginPage() {
       router.refresh();
     } catch (err: any) {
       console.error("Erreur connexion:", err);
-      const msg = err.message || "";
-      if (msg.includes("Email not confirmed")) {
+      const msg: string = err.message || "";
+      if (msg.toLowerCase().includes("captcha")) {
+        setError("Vérification de sécurité échouée. Réessayez.");
+      } else if (msg.includes("Email not confirmed")) {
         setError("Compte non confirmé. Contactez le support.");
       } else if (msg.includes("Invalid login credentials")) {
         setError("Identifiant ou mot de passe incorrect.");
@@ -47,6 +53,8 @@ export default function LoginPage() {
       }
     } finally {
       setLoading(false);
+      // Un jeton ne sert qu'une fois : on en redemande un nouveau
+      setResetSignal((n) => n + 1);
     }
   }
 
@@ -104,6 +112,8 @@ export default function LoginPage() {
             </Link>
           </div>
 
+          <Captcha onToken={setCaptchaToken} resetSignal={resetSignal} />
+
           {error && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
               {error}
@@ -112,7 +122,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (CAPTCHA_ACTIF && !captchaToken)}
             className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:opacity-50"
           >
             {loading ? "Connexion..." : "Se connecter"}

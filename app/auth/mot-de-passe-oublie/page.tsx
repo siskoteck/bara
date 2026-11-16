@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { estEmailFictif } from "@/lib/auth";
+import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
 
 const WHATSAPP_SUPPORT = "2250707249678";
 
@@ -12,6 +13,8 @@ export default function MotDePasseOubliePage() {
   const [error, setError] = useState("");
   const [envoye, setEnvoye] = useState(false);
   const [sansEmail, setSansEmail] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,15 +36,25 @@ export default function MotDePasseOubliePage() {
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         identifiant,
-        { redirectTo: `${window.location.origin}/auth/reinitialiser` }
+        {
+          redirectTo: `${window.location.origin}/auth/reinitialiser`,
+          captchaToken: captchaToken ?? undefined,
+        }
       );
       if (resetError) throw resetError;
       setEnvoye(true);
     } catch (err: any) {
       console.error("Erreur réinitialisation:", err);
-      setError(err.message || "Une erreur est survenue");
+      const msg: string = err.message || "";
+      if (msg.toLowerCase().includes("captcha")) {
+        setError("Vérification de sécurité échouée. Réessayez.");
+      } else {
+        setError(msg || "Une erreur est survenue");
+      }
     } finally {
       setLoading(false);
+      // Un jeton ne sert qu'une fois : on en redemande un nouveau
+      setResetSignal((n) => n + 1);
     }
   }
 
@@ -91,6 +104,8 @@ export default function MotDePasseOubliePage() {
               </div>
             )}
 
+            <Captcha onToken={setCaptchaToken} resetSignal={resetSignal} />
+
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
                 {error}
@@ -99,7 +114,7 @@ export default function MotDePasseOubliePage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (CAPTCHA_ACTIF && !captchaToken)}
               className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:opacity-50"
             >
               {loading ? "Envoi..." : "Envoyer le lien"}

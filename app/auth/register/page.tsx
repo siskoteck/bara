@@ -5,12 +5,15 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { telephoneVersEmail } from "@/lib/auth";
+import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [typeCompte, setTypeCompte] = useState<"particulier" | "artisan">("particulier");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,6 +36,7 @@ export default function RegisterPage() {
         email,
         password,
         options: {
+          captchaToken: captchaToken ?? undefined,
           data: {
             nom,
             telephone,
@@ -52,9 +56,16 @@ export default function RegisterPage() {
       router.push("/auth/login");
     } catch (err: any) {
       console.error("Erreur Supabase:", err);
-      setError(err.message || "Une erreur est survenue");
+      const msg: string = err.message || "";
+      if (msg.toLowerCase().includes("captcha")) {
+        setError("Vérification de sécurité échouée. Réessayez.");
+      } else {
+        setError(msg || "Une erreur est survenue");
+      }
     } finally {
       setLoading(false);
+      // Un jeton ne sert qu'une fois : on en redemande un nouveau
+      setResetSignal((n) => n + 1);
     }
   }
 
@@ -175,6 +186,8 @@ export default function RegisterPage() {
             </div>
           )}
 
+          <Captcha onToken={setCaptchaToken} resetSignal={resetSignal} />
+
           {error && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
               {error}
@@ -183,7 +196,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (CAPTCHA_ACTIF && !captchaToken)}
             className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 mt-2 disabled:opacity-50"
           >
             {loading ? "Création en cours..." : "Créer mon compte"}
