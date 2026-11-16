@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-// Remplacez par votre vrai numéro WhatsApp d'assistance BARA (avec l'indicatif 225)
-const WHATSAPP_SUPPORT = "2250700000000";
+const WHATSAPP_SUPPORT = "2250707249678";
 
 export default function ContactPage() {
   const [envoye, setEnvoye] = useState(false);
@@ -80,7 +79,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href={`https://wa.me{WHATSAPP_SUPPORT}?text=${encodeURIComponent(
+            href={`https://whatsapp.com{WHATSAPP_SUPPORT}&text=${encodeURIComponent(
               "Bonjour l'équipe BARA, j'ai besoin d'assistance."
             )}`}
             target="_blank"
