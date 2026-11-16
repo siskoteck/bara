@@ -1,31 +1,27 @@
-// Listes utilisées partout sur le site : à modifier ici uniquement.
-// Les anciennes valeurs (Plombier, Électricien, Maçon, Peintre, Autre) sont conservées
-// à l'identique pour que les fiches et demandes existantes continuent de correspondre.
-
-export const METIERS: string[] = [
-  "Plombier",
-  "Électricien",
-  "Maçon",
-  "Peintre",
-  "Menuisier",
-  "Carreleur",
-  "Soudeur / Ferronnier",
-  "Charpentier / Couvreur",
-  "Plaquiste",
-  "Vitrier / Aluminium",
-  "Climatisation / Froid",
-  "Réparateur électroménager",
-  "Mécanicien auto",
-  "Technicien informatique",
-  "Jardinier / Paysagiste",
-  "Nettoyage / Ménage",
-  "Déménageur",
-  "Couturier / Tailleur",
-  "Coiffeur / Coiffeuse",
+export const CATEGORIES_DJASSA = [
+  "Téléphones & Tablettes",
+  "Informatique & Jeux vidéo",
+  "TV, Audio & Photo",
+  "Électroménager",
+  "Meubles & Décoration",
+  "Mode, Vêtements & Chaussures",
+  "Beauté & Cosmétiques",
+  "Véhicules & Motos",
+  "Pièces détachées & Accessoires",
+  "Bricolage & Matériaux",
+  "Bébé & Enfant",
+  "Sport & Loisirs",
   "Autre",
-];
+] as const;
 
-export const COMMUNES: string[] = [
+export const ETATS_ARTICLE = [
+  "Neuf (jamais utilisé)",
+  "Occasion - Comme neuf",
+  "Occasion - Bon état",
+  "Occasion - À réparer",
+] as const;
+
+export const COMMUNES = [
   "Abobo",
   "Adjamé",
   "Anyama",
@@ -39,4 +35,4 @@ export const COMMUNES: string[] = [
   "Songon",
   "Treichville",
   "Yopougon",
-];
+] as const;

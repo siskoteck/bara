@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 
 export function Footer() {
@@ -6,26 +7,29 @@ export function Footer() {
     <footer className="bg-gray-900 text-white mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Colonne 1 - Logo */}
+          {/* Colonne 1 - Logo & Description */}
           <div>
-            <h3 className="text-2xl font-bold text-orange-500 mb-4">BARA</h3>
-            <p className="text-gray-400 text-sm">
-              La plateforme de mise en relation entre artisans et particuliers à Abidjan.
+            <h3 className="text-2xl font-extrabold text-orange-500 mb-4">
+              DJASSA
+            </h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              La marketplace de vente et d&apos;achat entre particuliers à
+              Abidjan. Publiez gratuitement et échangez directement sur WhatsApp.
             </p>
           </div>
 
-          {/* Colonne 2 - Liens */}
+          {/* Colonne 2 - Navigation */}
           <div>
-            <h4 className="font-semibold mb-4">Navigation</h4>
+            <h4 className="font-semibold mb-4">Explorer</h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
-                <Link href="/artisans" className="hover:text-orange-500">
-                  Trouver un artisan
+                <Link href="/annonces" className="hover:text-orange-500">
+                  Parcourir les annonces
                 </Link>
               </li>
               <li>
-                <Link href="/demande" className="hover:text-orange-500">
-                  Poster une demande
+                <Link href="/publier" className="hover:text-orange-500">
+                  Vendre un article
                 </Link>
               </li>
               <li>
@@ -61,7 +65,10 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/politique-confidentialite" className="hover:text-orange-500">
+                <Link
+                  href="/politique-confidentialite"
+                  className="hover:text-orange-500"
+                >
                   Confidentialité
                 </Link>
               </li>
@@ -71,17 +78,13 @@ export function Footer() {
           {/* Colonne 4 - Contact */}
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
-            <p className="text-sm text-gray-400">
-              Abidjan, Côte d'Ivoire
-            </p>
-            <p className="text-sm text-gray-400 mt-2">
-              contact@bara.ci
-            </p>
+            <p className="text-sm text-gray-400">Abidjan, Côte d&apos;Ivoire</p>
+            <p className="text-sm text-gray-400 mt-2">contact@djassa.ci</p>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-10 pt-6 text-center text-sm text-gray-500">
-         © 2026 BARA. Tous droits réservés.
+          © 2026 DJASSA. Tous droits réservés.
         </div>
       </div>
     </footer>

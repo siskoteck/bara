@@ -10,7 +10,6 @@ const ADMIN_EMAIL = "cv2tcv2t@gmail.com";
 export default function AuthButtons() {
   const router = useRouter();
   const [nom, setNom] = useState<string | null>(null);
-  const [estArtisan, setEstArtisan] = useState(false);
   const [estAdmin, setEstAdmin] = useState(false);
   const [connecte, setConnecte] = useState(false);
   const [pret, setPret] = useState(false);
@@ -19,7 +18,6 @@ export default function AuthButtons() {
     function appliquer(user: any) {
       setConnecte(!!user);
       setNom(user?.user_metadata?.nom ?? null);
-      setEstArtisan(user?.user_metadata?.type_compte === "artisan");
       setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     }
 
@@ -55,19 +53,11 @@ export default function AuthButtons() {
           </Link>
         )}
         <Link
-          href="/mes-demandes"
+          href="/mes-annonces"
           className="text-sm font-medium text-gray-700 hover:text-orange-600"
         >
-          Mes demandes
+          Mes annonces
         </Link>
-        {estArtisan && (
-          <Link
-            href="/mon-profil"
-            className="text-sm font-medium text-orange-600 hover:underline"
-          >
-            Mon profil
-          </Link>
-        )}
         <span className="text-sm text-gray-700 hidden lg:inline">
           {nom ?? "Mon compte"}
         </span>
@@ -83,12 +73,12 @@ export default function AuthButtons() {
 
   return (
     <div className="flex items-center gap-3">
-      <Link href="/auth/login" className="text-sm hover:underline">
+      <Link href="/auth/login" className="text-sm font-medium hover:underline">
         Connexion
       </Link>
       <Link
         href="/auth/register"
-        className="text-sm bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"
+        className="text-sm font-semibold bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
       >
         S&apos;inscrire
       </Link>
