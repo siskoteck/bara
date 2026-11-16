@@ -1,213 +1,197 @@
 "use client";
 
+import { METIERS, COMMUNES } from "@/lib/constantes";
+import { useState } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type Demande = {
-  id: number;
-  created_at: string;
-  user_id: string;
-  titre: string;
-  metier: string;
-  commune: string;
-  description: string;
-  telephone: string;
-  statut: "ouverte" | "terminee";
-};
-
-function lienWhatsApp(telephone: string, message: string): string | null {
-  const chiffres = telephone.replace(/\D/g, "");
-  if (chiffres.length < 8) return null;
-  const numero = chiffres.startsWith("225") ? chiffres : `225${chiffres}`;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-export default function MesDemandesPage() {
-  const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [nomArtisan, setNomArtisan] = useState<string | null>(null);
-  const [estArtisan, setEstArtisan] = useState(false);
-  const [demandes, setDemandes] = useState<Demande[]>([]);
-  const [chargement, setChargement] = useState(true);
+export default function DemandePage() {
+  const [envoye, setEnvoye] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function charger() {
-      const { data } = await supabase.auth.getSession();
-      const user = data.session?.user;
-
-      if (!user) {
-        router.replace("/auth/login");
-        return;
-      }
-      setUserId(user.id);
-
-      const { data: fiche } = await supabase
-        .from("artisans")
-        .select("name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (fiche) {
-        setEstArtisan(true);
-        setNomArtisan(fiche.name);
-      }
-
-      // La sécurité de la base ne renvoie que : mes demandes + celles de mon métier
-      const { data: lignes, error: erreur } = await supabase
-        .from("demandes")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (erreur) {
-        console.error("Erreur chargement demandes:", erreur);
-        setError("Impossible de charger les demandes.");
-      }
-
-      setDemandes((lignes as Demande[]) ?? []);
-      setChargement(false);
-    }
-
-    charger();
-  }, [router]);
-
-  async function terminer(id: number) {
-    if (!userId) return;
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
     setError("");
 
-    const { data, error: updateError } = await supabase
-      .from("demandes")
-      .update({ statut: "terminee" })
-      .eq("id", id)
-      .eq("user_id", userId)
-      .select("id");
+    const formData = new FormData(e.currentTarget);
+    const metierChoisi = formData.get("categorie") as string;
+    const communeChoisie = formData.get("quartier") as string;
+    const descriptionSaisie = (formData.get("description") as string).trim();
+    const telephoneSaisi = (formData.get("telephone") as string).trim();
+    const budgetSaisi = ((formData.get("budget") as string) || "").trim() || null;
 
-    if (updateError || !data || data.length === 0) {
-      console.error("Erreur mise à jour:", updateError);
-      setError("Impossible de modifier cette demande.");
+    // Récupère l'utilisateur connecté s'il a un compte
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id ?? null;
+
+    const nouvelleDemande = {
+      user_id: userId,
+      titre: `${metierChoisi} - ${communeChoisie}`,
+      metier: metierChoisi,
+      commune: communeChoisie,
+      description: descriptionSaisie,
+      telephone: telephoneSaisi,
+      budget: budgetSaisi,
+      statut: "ouverte",
+    };
+
+    const { error: insertError } = await supabase
+      .from("demandes")
+      .insert([nouvelleDemande]);
+
+    if (insertError) {
+      console.error(insertError);
+      setError("Erreur lors de l'envoi : " + insertError.message);
+      setLoading(false);
       return;
     }
 
-    setDemandes((liste) =>
-      liste.map((d) => (d.id === id ? { ...d, statut: "terminee" } : d))
-    );
+    setEnvoye(true);
+    setLoading(false);
   }
 
-  if (chargement) {
+  if (envoye) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 text-gray-500">Chargement…</div>
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div className="bg-white rounded-2xl shadow-sm border p-10">
+          <div className="text-5xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold mb-3">Demande envoyée !</h1>
+          <p className="text-gray-600 mb-8">
+            Des artisans qualifiés vont bientôt vous contacter.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/mes-demandes"
+              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700"
+            >
+              Voir mes demandes
+            </Link>
+            <Link
+              href="/"
+              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Retour à l&apos;accueil
+            </Link>
+          </div>
+        </div>
+      </div>
     );
   }
-
-  const mesDemandes = demandes.filter((d) => d.user_id === userId);
-  const demandesPourMoi = demandes.filter(
-    (d) => d.user_id !== userId && d.statut === "ouverte"
-  );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10 space-y-12">
-      {error && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</div>
-      )}
+    <div className="max-w-2xl mx-auto px-4 py-10">
+      <h1 className="text-3xl font-bold mb-2">Poster une demande</h1>
+      <p className="text-gray-600 mb-8">
+        Décrivez votre besoin, des artisans qualifiés vous répondront.
+      </p>
 
-      {/* Mes demandes */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Mes demandes</h1>
-          <Link
-            href="/demande"
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl shadow-sm border p-8 space-y-6"
+      >
+        <div>
+          <label htmlFor="categorie" className="block text-sm font-medium mb-2">
+            Métier recherché *
+          </label>
+          <select
+            id="categorie"
+            name="categorie"
+            required
+            defaultValue=""
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
           >
-            Nouvelle demande
-          </Link>
+            <option value="" disabled>
+              Choisir un métier
+            </option>
+            {METIERS.map((metier) => (
+              <option key={metier} value={metier}>
+                {metier}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {mesDemandes.length === 0 ? (
-          <p className="text-gray-600">Vous n'avez pas encore posté de demande.</p>
-        ) : (
-          <div className="space-y-4">
-            {mesDemandes.map((d) => (
-              <div key={d.id} className="bg-white rounded-xl shadow-sm border p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-semibold">{d.titre}</h2>
-                  <span
-                    className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${
-                      d.statut === "ouverte"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {d.statut === "ouverte" ? "Ouverte" : "Terminée"}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {d.metier} · {d.commune} · {formatDate(d.created_at)}
-                </p>
-                <p className="text-gray-700 mt-3 whitespace-pre-line">{d.description}</p>
-                {d.statut === "ouverte" && (
-                  <button
-                    onClick={() => terminer(d.id)}
-                    className="mt-4 text-sm text-orange-600 font-medium hover:underline"
-                  >
-                    Marquer comme terminée
-                  </button>
-                )}
-              </div>
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium mb-2">
+            Description du besoin *
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            required
+            rows={4}
+            placeholder="Expliquez clairement ce dont vous avez besoin..."
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="quartier" className="block text-sm font-medium mb-2">
+            Commune à Abidjan *
+          </label>
+          <select
+            id="quartier"
+            name="quartier"
+            required
+            defaultValue=""
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+          >
+            <option value="" disabled>
+              Choisir une commune
+            </option>
+            {COMMUNES.map((commune) => (
+              <option key={commune} value={commune}>
+                {commune}
+              </option>
             ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="telephone" className="block text-sm font-medium mb-2">
+            Votre numéro de téléphone (WhatsApp) *
+          </label>
+          <input
+            id="telephone"
+            name="telephone"
+            type="tel"
+            required
+            pattern="[0-9 +]{8,16}"
+            title="Entrez un numéro valide, par exemple 07 00 00 00 00"
+            placeholder="07 00 00 00 00"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="budget" className="block text-sm font-medium mb-2">
+            Budget approximatif (optionnel)
+          </label>
+          <input
+            id="budget"
+            name="budget"
+            type="text"
+            placeholder="Ex: 50 000 FCFA"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+          />
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+            {error}
           </div>
         )}
-      </section>
 
-      {/* Demandes pour les artisans */}
-      {estArtisan && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Demandes pour mon métier</h2>
-
-          {demandesPourMoi.length === 0 ? (
-            <p className="text-gray-600">Aucune demande ouverte pour le moment.</p>
-          ) : (
-            <div className="space-y-4">
-              {demandesPourMoi.map((d) => {
-                const lien = lienWhatsApp(
-                  d.telephone,
-                  `Bonjour, je suis ${nomArtisan ?? "un artisan"} de BARA. Je vous contacte au sujet de votre demande « ${d.titre} ».`
-                );
-                return (
-                  <div key={d.id} className="bg-white rounded-xl shadow-sm border p-5">
-                    <h3 className="font-semibold">{d.titre}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {d.metier} · {d.commune} · {formatDate(d.created_at)}
-                    </p>
-                    <p className="text-gray-700 mt-3 whitespace-pre-line">
-                      {d.description}
-                    </p>
-                    {lien && (
-                      <a
-                        href={lien}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg"
-                      >
-                        Contacter sur WhatsApp
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 disabled:opacity-50"
+        >
+          {loading ? "Envoi en cours..." : "Envoyer ma demande"}
+        </button>
+      </form>
     </div>
   );
 }
