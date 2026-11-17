@@ -28,6 +28,7 @@ export default function ContactPage() {
     const contact = (formData.get("contact") as string).trim();
     const message = (formData.get("message") as string).trim();
 
+    // 1. Enregistrer le message dans Supabase
     const { error: insertError } = await supabase
       .from("messages_contact")
       .insert([{ nom, contact, message }]);
@@ -41,8 +42,9 @@ export default function ContactPage() {
       return;
     }
 
+    // 2. Déclencher l'envoi d'e-mail via /api/notifier
     try {
-      await fetch("/api/notifier", {
+      const res = await fetch("/api/notifier", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,8 +52,12 @@ export default function ContactPage() {
           contenu: `Nom : ${nom}\nContact : ${contact}\n\nMessage :\n${message}`,
         }),
       });
+
+      if (!res.ok) {
+        console.error("Erreur API notifier:", await res.text());
+      }
     } catch (mailError) {
-      console.error("Erreur notification e-mail:", mailError);
+      console.error("Erreur réseau notification e-mail:", mailError);
     }
 
     setEnvoye(true);
