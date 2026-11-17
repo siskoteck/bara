@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { METIERS, COMMUNES } from "@/lib/constantes";
+import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { RealisationsUpload } from "@/components/RealisationsUpload";
 
@@ -25,6 +25,8 @@ export default function MonProfilPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [fiche, setFiche] = useState<Fiche | null>(null);
+  const [communeChoisie, setCommuneChoisie] = useState<string>("");
+  const [quartierSaisi, setQuartierSaisi] = useState<string>("");
   const [disponible, setDisponible] = useState<boolean>(true);
   const [chargement, setChargement] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,6 +60,8 @@ export default function MonProfilPage() {
 
       if (ligne) {
         setFiche(ligne);
+        setCommuneChoisie(ligne.commune ?? "");
+        setQuartierSaisi(ligne.quartier ?? "");
         setDisponible(ligne.disponible ?? true);
       }
       setChargement(false);
@@ -66,6 +70,9 @@ export default function MonProfilPage() {
     charger();
   }, [router]);
 
+  const suggestionsQuartiers = communeChoisie
+    ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
+    : [];
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!userId) return;
@@ -78,8 +85,8 @@ export default function MonProfilPage() {
     const miseAJour = {
       name: (formData.get("name") as string).trim(),
       metier: formData.get("metier") as string,
-      commune: (formData.get("commune") as string) || null,
-      quartier: ((formData.get("quartier") as string) || "").trim() || null,
+      commune: communeChoisie || null,
+      quartier: quartierSaisi.trim() || null,
       disponible,
       description: ((formData.get("description") as string) || "").trim() || null,
       telephone: (formData.get("telephone") as string).trim(),
@@ -132,6 +139,7 @@ export default function MonProfilPage() {
       </div>
     );
   }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
@@ -165,7 +173,6 @@ export default function MonProfilPage() {
             />
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Statut de disponibilité */}
           <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
@@ -212,7 +219,7 @@ export default function MonProfilPage() {
             <select
               id="metier"
               name="metier"
-              defaultValue={fiche.metier ?? METIERS[0]}
+              defaultValue={fiche.metier ?? METIERS}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
             >
               {METIERS.map((m) => (
@@ -223,6 +230,7 @@ export default function MonProfilPage() {
             </select>
           </div>
 
+          {/* Commune + Sous-quartier intelligent */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="commune" className="block text-sm font-medium mb-1">
@@ -231,7 +239,11 @@ export default function MonProfilPage() {
               <select
                 id="commune"
                 name="commune"
-                defaultValue={fiche.commune ?? ""}
+                value={communeChoisie}
+                onChange={(e) => {
+                  setCommuneChoisie(e.target.value);
+                  setQuartierSaisi("");
+                }}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
               >
                 <option value="">Choisir une commune</option>
@@ -245,17 +257,28 @@ export default function MonProfilPage() {
 
             <div>
               <label htmlFor="quartier" className="block text-sm font-medium mb-1">
-                Quartier précis{" "}
-                <span className="text-gray-400 font-normal">(facultatif)</span>
+                Sous-quartier{" "}
+                <span className="text-gray-400 font-normal">(suggestion auto)</span>
               </label>
               <input
                 id="quartier"
                 name="quartier"
                 type="text"
-                defaultValue={fiche.quartier ?? ""}
-                placeholder="Ex: Angré, Riviera, Niangon, Zone 4..."
+                list="liste-quartiers-profil"
+                value={quartierSaisi}
+                onChange={(e) => setQuartierSaisi(e.target.value)}
+                placeholder={
+                  suggestionsQuartiers.length > 0
+                    ? `Ex: ${suggestionsQuartiers}...`
+                    : "Choisir ou saisir un quartier"
+                }
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
               />
+              <datalist id="liste-quartiers-profil">
+                {suggestionsQuartiers.map((q) => (
+                  <option key={q} value={q} />
+                ))}
+              </datalist>
             </div>
           </div>
 
