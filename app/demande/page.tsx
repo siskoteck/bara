@@ -1,6 +1,6 @@
 "use client";
 
-import { METIERS, COMMUNES } from "@/lib/constantes";
+import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +9,12 @@ export default function DemandePage() {
   const [envoye, setEnvoye] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [communeChoisie, setCommuneChoisie] = useState("");
+  const [quartierSaisi, setQuartierSaisi] = useState("");
+
+  const suggestionsQuartiers = communeChoisie
+    ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
+    : [];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,19 +23,22 @@ export default function DemandePage() {
 
     const formData = new FormData(e.currentTarget);
     const metierChoisi = formData.get("categorie") as string;
-    const communeChoisie = formData.get("quartier") as string;
     const descriptionSaisie = (formData.get("description") as string).trim();
     const telephoneSaisi = (formData.get("telephone") as string).trim();
     const budgetSaisi = ((formData.get("budget") as string) || "").trim() || null;
+    const quartierPropre = quartierSaisi.trim() || null;
 
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user?.id ?? null;
 
     const nouvelleDemande = {
       user_id: userId,
-      titre: `${metierChoisi} - ${communeChoisie}`,
+      titre: `${metierChoisi} - ${communeChoisie}${
+        quartierPropre ? ` (${quartierPropre})` : ""
+      }`,
       metier: metierChoisi,
       commune: communeChoisie,
+      quartier: quartierPropre,
       description: descriptionSaisie,
       telephone: telephoneSaisi,
       budget: budgetSaisi,
@@ -47,14 +56,17 @@ export default function DemandePage() {
       return;
     }
 
-    // Envoi de la notification par e-mail (sans bloquer l'utilisateur si l'e-mail échoue)
     try {
       await fetch("/api/notifier", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sujet: `🛠️ Nouvelle demande : ${metierChoisi} à ${communeChoisie}`,
-          contenu: `Métier : ${metierChoisi}\nCommune : ${communeChoisie}\nTéléphone client : ${telephoneSaisi}\nBudget : ${budgetSaisi || "Non précisé"}\n\nDescription :\n${descriptionSaisie}`,
+          contenu: `Métier : ${metierChoisi}\nCommune : ${communeChoisie}${
+            quartierPropre ? ` (${quartierPropre})` : ""
+          }\nTéléphone client : ${telephoneSaisi}\nBudget : ${
+            budgetSaisi || "Non précisé"
+          }\n\nDescription :\n${descriptionSaisie}`,
         }),
       });
     } catch (mailError) {
@@ -64,7 +76,6 @@ export default function DemandePage() {
     setEnvoye(true);
     setLoading(false);
   }
-
   if (envoye) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -140,26 +151,59 @@ export default function DemandePage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="quartier" className="block text-sm font-medium mb-2">
-            Commune à Abidjan *
-          </label>
-          <select
-            id="quartier"
-            name="quartier"
-            required
-            defaultValue=""
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
-          >
-            <option value="" disabled>
-              Choisir une commune
-            </option>
-            {COMMUNES.map((commune) => (
-              <option key={commune} value={commune}>
-                {commune}
+        {/* Commune + Sous-quartier intelligent */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="commune" className="block text-sm font-medium mb-2">
+              Commune à Abidjan *
+            </label>
+            <select
+              id="commune"
+              name="commune"
+              required
+              value={communeChoisie}
+              onChange={(e) => {
+                setCommuneChoisie(e.target.value);
+                setQuartierSaisi("");
+              }}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+            >
+              <option value="" disabled>
+                Choisir une commune
               </option>
-            ))}
-          </select>
+              {COMMUNES.map((commune) => (
+                <option key={commune} value={commune}>
+                  {commune}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="quartier" className="block text-sm font-medium mb-2">
+              Sous-quartier{" "}
+              <span className="text-gray-400 font-normal">(facultatif)</span>
+            </label>
+            <input
+              id="quartier"
+              name="quartier"
+              type="text"
+              list="liste-quartiers-demande"
+              value={quartierSaisi}
+              onChange={(e) => setQuartierSaisi(e.target.value)}
+              placeholder={
+                suggestionsQuartiers.length > 0
+                  ? `Ex: ${suggestionsQuartiers[0]}...`
+                  : "Choisir ou taper un quartier"
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+            />
+            <datalist id="liste-quartiers-demande">
+              {suggestionsQuartiers.map((q) => (
+                <option key={q} value={q} />
+              ))}
+            </datalist>
+          </div>
         </div>
 
         <div>

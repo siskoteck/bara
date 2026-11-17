@@ -4,8 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { METIERS, COMMUNES } from "@/lib/constantes";
+import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { genererLienWhatsApp } from "@/lib/whatsapp";
+import { BannierePub } from "@/components/BannierePub";
 
 interface Artisan {
   id: string;
@@ -32,13 +33,21 @@ function AnnuaireArtisansContent() {
   const [communeFiltre, setCommuneFiltre] = useState(
     searchParams.get("commune") || ""
   );
+  const [quartierFiltre, setQuartierFiltre] = useState(
+    searchParams.get("quartier") || ""
+  );
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setMetierFiltre(searchParams.get("metier") || "");
     setCommuneFiltre(searchParams.get("commune") || "");
+    setQuartierFiltre(searchParams.get("quartier") || "");
   }, [searchParams]);
+
+  const quartiersDisponibles = communeFiltre
+    ? QUARTIERS_PAR_COMMUNE[communeFiltre] || []
+    : [];
 
   useEffect(() => {
     async function chargerArtisans() {
@@ -54,6 +63,9 @@ function AnnuaireArtisansContent() {
       if (communeFiltre) {
         query = query.eq("commune", communeFiltre);
       }
+      if (quartierFiltre.trim()) {
+        query = query.ilike("quartier", `%${quartierFiltre.trim()}%`);
+      }
 
       const { data, error } = await query;
 
@@ -64,15 +76,21 @@ function AnnuaireArtisansContent() {
     }
 
     chargerArtisans();
-  }, [metierFiltre, communeFiltre]);
+  }, [metierFiltre, communeFiltre, quartierFiltre]);
 
-  function appliquerFiltres(nouveauMetier: string, nouvelleCommune: string) {
+  function appliquerFiltres(
+    nouveauMetier: string,
+    nouvelleCommune: string,
+    nouveauQuartier: string
+  ) {
     setMetierFiltre(nouveauMetier);
     setCommuneFiltre(nouvelleCommune);
+    setQuartierFiltre(nouveauQuartier);
 
     const params = new URLSearchParams();
     if (nouveauMetier) params.set("metier", nouveauMetier);
     if (nouvelleCommune) params.set("commune", nouvelleCommune);
+    if (nouveauQuartier.trim()) params.set("quartier", nouveauQuartier.trim());
 
     const queryString = params.toString();
     router.replace(queryString ? `/artisans?${queryString}` : "/artisans");
@@ -84,13 +102,13 @@ function AnnuaireArtisansContent() {
           Trouver un artisan à Abidjan
         </h1>
         <p className="text-gray-600 mt-1">
-          Filtrez par métier et par commune pour contacter directement un professionnel.
+          Filtrez par métier, commune et sous-quartier pour contacter directement un professionnel.
         </p>
       </div>
 
       {/* Barre de filtres */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-8 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
           <label
             htmlFor="filtre-metier"
             className="block text-xs font-medium text-gray-500 mb-1"
@@ -100,8 +118,10 @@ function AnnuaireArtisansContent() {
           <select
             id="filtre-metier"
             value={metierFiltre}
-            onChange={(e) => appliquerFiltres(e.target.value, communeFiltre)}
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800"
+            onChange={(e) =>
+              appliquerFiltres(e.target.value, communeFiltre, quartierFiltre)
+            }
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800 text-sm"
           >
             <option value="">Tous les métiers</option>
             {METIERS.map((m) => (
@@ -112,7 +132,7 @@ function AnnuaireArtisansContent() {
           </select>
         </div>
 
-        <div className="flex-1">
+        <div>
           <label
             htmlFor="filtre-commune"
             className="block text-xs font-medium text-gray-500 mb-1"
@@ -122,8 +142,10 @@ function AnnuaireArtisansContent() {
           <select
             id="filtre-commune"
             value={communeFiltre}
-            onChange={(e) => appliquerFiltres(metierFiltre, e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800"
+            onChange={(e) =>
+              appliquerFiltres(metierFiltre, e.target.value, "")
+            }
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800 text-sm"
           >
             <option value="">Toutes les communes</option>
             {COMMUNES.map((c) => (
@@ -134,18 +156,50 @@ function AnnuaireArtisansContent() {
           </select>
         </div>
 
-        {(metierFiltre || communeFiltre) && (
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={() => appliquerFiltres("", "")}
-              className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 rounded-xl border border-orange-200 transition"
-            >
-              Réinitialiser
-            </button>
-          </div>
-        )}
+        <div>
+          <label
+            htmlFor="filtre-quartier"
+            className="block text-xs font-medium text-gray-500 mb-1"
+          >
+            Sous-quartier
+          </label>
+          <input
+            id="filtre-quartier"
+            type="text"
+            list="liste-quartiers-annuaire"
+            value={quartierFiltre}
+            onChange={(e) =>
+              appliquerFiltres(metierFiltre, communeFiltre, e.target.value)
+            }
+            placeholder={
+              quartiersDisponibles.length > 0
+                ? `Ex: ${quartiersDisponibles[0]}...`
+                : "Ex: Angré, Zone 4, Niangon..."
+            }
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+          />
+          <datalist id="liste-quartiers-annuaire">
+            {quartiersDisponibles.map((q) => (
+              <option key={q} value={q} />
+            ))}
+          </datalist>
+        </div>
       </div>
+
+      {(metierFiltre || communeFiltre || quartierFiltre) && (
+        <div className="mb-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => appliquerFiltres("", "", "")}
+            className="px-4 py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50 rounded-xl border border-orange-200 transition"
+          >
+            ✕ Réinitialiser tous les filtres
+          </button>
+        </div>
+      )}
+
+      {/* Bannière Publicitaire */}
+      <BannierePub emplacement="annuaire" />
 
       {/* Résultats */}
       {loading ? (
