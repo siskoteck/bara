@@ -286,10 +286,11 @@ export default function AdminPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={reponse.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(reponse.url, "_blank", "noopener,noreferrer")
+                      }
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
                         reponse.type === "email"
                           ? "bg-blue-600 hover:bg-blue-700"
@@ -299,7 +300,7 @@ export default function AdminPage() {
                       {reponse.type === "email"
                         ? "✉️ Répondre par e-mail"
                         : "💬 Répondre sur WhatsApp"}
-                    </a>
+                    </button>
 
                     <button
                       onClick={() => supprimerMessage(msg.id)}
