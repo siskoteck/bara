@@ -154,9 +154,10 @@ export default function AdminPage() {
 
   function genererLienReponseContact(nom: string, contact: string) {
     const valeur = (contact || "").trim();
+    const nomPropre = (nom || "Client").trim();
     const sujet = encodeURIComponent("Réponse de l'équipe BARA Abidjan");
     const corpsMail = encodeURIComponent(
-      `Bonjour ${nom},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
+      `Bonjour ${nomPropre},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
     );
 
     if (valeur.includes("@")) {
@@ -175,13 +176,20 @@ export default function AdminPage() {
       chiffres = chiffres.slice(2);
     }
 
+    if (chiffres.length < 8) {
+      return {
+        type: "whatsapp" as const,
+        url: "https://whatsapp.com",
+      };
+    }
+
     const texteWhatsApp = encodeURIComponent(
-      `Bonjour ${nom}, merci pour votre message sur BARA Abidjan.`
+      `Bonjour ${nomPropre}, merci pour votre message sur BARA Abidjan.`
     );
 
     return {
       type: "whatsapp" as const,
-      url: `https://whatsapp.com{chiffres}&text=${texteWhatsApp}`,
+      url: `https://whatsapp.com?phone=${chiffres}&text=${texteWhatsApp}`,
     };
   }
   if (loading || !autorise) {
