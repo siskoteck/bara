@@ -11,8 +11,18 @@ interface ArtisanAdmin {
   name: string;
   metier: string;
   commune: string | null;
+  quartier?: string | null;
   telephone: string | null;
   verifie: boolean | null;
+}
+
+interface AvisAdmin {
+  id: number;
+  created_at: string;
+  artisan_id: number;
+  auteur: string;
+  note: number;
+  commentaire: string | null;
 }
 
 interface MessageContact {
@@ -23,43 +33,28 @@ interface MessageContact {
   message: string;
 }
 
-interface AvisAdmin {
-  id: number;
-  created_at: string;
-  artisan_id: number;
-  auteur_nom: string;
-  note: number;
-  commentaire: string;
-}
-
 interface BanniereAdmin {
   id: number;
-  created_at: string;
-  partenaire: string;
+  titre: string;
   image_url: string;
-  lien_destination: string;
-  emplacement: "accueil" | "annuaire";
-  active: boolean;
-  clics: number;
+  lien_url: string;
+  emplacement: string;
+  actif: boolean;
 }
 
 export default function AdminPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
-  const [messages, setMessages] = useState<MessageContact[]>([]);
-  const [avisListe, setAvisListe] = useState<AvisAdmin[]>([]);
-  const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
   const [onglet, setOnglet] = useState<
-    "artisans" | "messages" | "avis" | "publicites"
-  >("artisans");
+    "artisans" | "avis" | "messages" | "bannieres"
+  >("messages");
 
-  const [partenaire, setPartenaire] = useState("");
-  const [lienDestination, setLienDestination] = useState("");
-  const [emplacement, setEmplacement] = useState<"accueil" | "annuaire">("accueil");
-  const [fichierPub, setFichierPub] = useState<File | null>(null);
-  const [envoiPub, setEnvoiPub] = useState(false);
+  const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
+  const [avis, setAvis] = useState<AvisAdmin[]>([]);
+  const [messages, setMessages] = useState<MessageContact[]>([]);
+  const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
+
   useEffect(() => {
     async function verifierEtCharger() {
       const { data } = await supabase.auth.getSession();
@@ -72,18 +67,18 @@ export default function AdminPage() {
 
       setAutorise(true);
 
-      const [resArtisans, resMessages, resAvis, resBannieres] =
+      const [resArtisans, resAvis, resMessages, resBannieres] =
         await Promise.all([
           supabase
             .from("artisans")
-            .select("id, name, metier, commune, telephone, verifie")
-            .order("id", { ascending: false }),
-          supabase
-            .from("messages_contact")
-            .select("*")
+            .select("id, name, metier, commune, quartier, telephone, verifie")
             .order("created_at", { ascending: false }),
           supabase
             .from("avis")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("messages_contact")
             .select("*")
             .order("created_at", { ascending: false }),
           supabase
@@ -93,9 +88,9 @@ export default function AdminPage() {
         ]);
 
       if (resArtisans.data) setArtisans(resArtisans.data);
+      if (resAvis.data) setAvis(resAvis.data);
       if (resMessages.data) setMessages(resMessages.data);
-      if (resAvis.data) setAvisListe(resAvis.data as AvisAdmin[]);
-      if (resBannieres.data) setBannieres(resBannieres.data as BanniereAdmin[]);
+      if (resBannieres.data) setBannieres(resBannieres.data);
 
       setLoading(false);
     }
@@ -103,479 +98,306 @@ export default function AdminPage() {
     verifierEtCharger();
   }, [router]);
 
-  async function basculerVerification(artisan: ArtisanAdmin) {
-    const nouveauStatut = !artisan.verifie;
-
+  async function basculerVerification(id: number, etatActuel: boolean | null) {
+    const nouvelEtat = !etatActuel;
     const { error } = await supabase
       .from("artisans")
-      .update({ verifie: nouveauStatut })
-      .eq("id", artisan.id);
+      .update({ verifie: nouvelEtat })
+      .eq("id", id);
 
-    if (error) {
-      alert("Erreur lors de la mise à jour : " + error.message);
-      return;
+    if (!error) {
+      setArtisans((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, verifie: nouvelEtat } : a))
+      );
     }
-
-    setArtisans((prev) =>
-      prev.map((a) => (a.id === artisan.id ? { ...a, verifie: nouveauStatut } : a))
-    );
   }
 
-  async function supprimerArtisan(artisan: ArtisanAdmin) {
-    if (
-      !confirm(
-        `Supprimer définitivement le profil de "${artisan.name}" ? Cette action est irréversible.`
-      )
-    ) {
-      return;
+  async function supprimerArtisan(id: number, nom: string) {
+    if (!confirm(`Supprimer définitivement la fiche de "${nom}" ?`)) return;
+    const { error } = await supabase.from("artisans").delete().eq("id", id);
+    if (!error) {
+      setArtisans((prev) => prev.filter((a) => a.id !== id));
     }
+  }
 
-    const { error } = await supabase
-      .from("artisans")
-      .delete()
-      .eq("id", artisan.id);
-
-    if (error) {
-      alert("Erreur lors de la suppression : " + error.message);
-      return;
+  async function supprimerAvis(id: number) {
+    if (!confirm("Supprimer cet avis ?")) return;
+    const { error } = await supabase.from("avis").delete().eq("id", id);
+    if (!error) {
+      setAvis((prev) => prev.filter((a) => a.id !== id));
     }
-
-    setArtisans((prev) => prev.filter((a) => a.id !== artisan.id));
   }
 
   async function supprimerMessage(id: number) {
     if (!confirm("Supprimer ce message de contact ?")) return;
-
     const { error } = await supabase
       .from("messages_contact")
       .delete()
       .eq("id", id);
-
     if (!error) {
       setMessages((prev) => prev.filter((m) => m.id !== id));
     }
   }
 
-  async function supprimerAvis(id: number) {
-    if (!confirm("Supprimer cet avis client ?")) return;
-
-    const { error } = await supabase.from("avis").delete().eq("id", id);
-
-    if (error) {
-      alert("Erreur lors de la suppression de l'avis : " + error.message);
-      return;
-    }
-
-    setAvisListe((prev) => prev.filter((a) => a.id !== id));
-  }
-  async function ajouterBanniere(e: React.FormEvent) {
-    e.preventDefault();
-    if (!partenaire.trim() || !lienDestination.trim() || !fichierPub) {
-      alert("Veuillez remplir tous les champs et choisir une image.");
-      return;
-    }
-
-    try {
-      setEnvoiPub(true);
-      const ext = fichierPub.name.split(".").pop() || "jpg";
-      const filePath = `${Date.now()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("bannieres")
-        .upload(filePath, fichierPub);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("bannieres")
-        .getPublicUrl(filePath);
-
-      const { data: nouvellePub, error: insertError } = await supabase
-        .from("bannieres")
-        .insert([
-          {
-            partenaire: partenaire.trim(),
-            image_url: urlData.publicUrl,
-            lien_destination: lienDestination.trim(),
-            emplacement,
-            active: true,
-          },
-        ])
-        .select("*")
-        .single();
-
-      if (insertError) throw insertError;
-
-      if (nouvellePub) {
-        setBannieres((prev) => [nouvellePub as BanniereAdmin, ...prev]);
-      }
-
-      setPartenaire("");
-      setLienDestination("");
-      setFichierPub(null);
-      const inputFile = document.getElementById("input-pub-file") as HTMLInputElement;
-      if (inputFile) inputFile.value = "";
-    } catch (err: any) {
-      console.error("Erreur ajout bannière:", err);
-      alert("Erreur lors de l'ajout : " + (err.message || "Inconnue"));
-    } finally {
-      setEnvoiPub(false);
-    }
-  }
-
-  async function basculerEtatBanniere(pub: BanniereAdmin) {
-    const nouvelEtat = !pub.active;
+  async function basculerBanniere(id: number, actifActuel: boolean) {
+    const nouvelEtat = !actifActuel;
     const { error } = await supabase
       .from("bannieres")
-      .update({ active: nouvelEtat })
-      .eq("id", pub.id);
-
+      .update({ actif: nouvelEtat })
+      .eq("id", id);
     if (!error) {
       setBannieres((prev) =>
-        prev.map((b) => (b.id === pub.id ? { ...b, active: nouvelEtat } : b))
+        prev.map((b) => (b.id === id ? { ...b, actif: nouvelEtat } : b))
       );
     }
   }
 
-  async function supprimerBanniere(id: number) {
-    if (!confirm("Supprimer définitivement cette publicité ?")) return;
+  function genererLienReponseContact(nom: string, contact: string) {
+    const valeur = (contact || "").trim();
+    const sujet = encodeURIComponent("Réponse de l'équipe BARA Abidjan");
+    const corps = encodeURIComponent(
+      `Bonjour ${nom},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
+    );
 
-    const { error } = await supabase.from("bannieres").delete().eq("id", id);
-
-    if (!error) {
-      setBannieres((prev) => prev.filter((b) => b.id !== id));
+    if (valeur.includes("@")) {
+      return {
+        type: "email" as const,
+        url: `mailto:${valeur}?subject=${sujet}&body=${corps}`,
+      };
     }
-  }
 
+    let chiffres = valeur.replace(/\D/g, "");
+    if (chiffres.length === 10 && chiffres.startsWith("0")) {
+      chiffres = `225${chiffres}`;
+    } else if (chiffres.startsWith("00225")) {
+      chiffres = chiffres.slice(2);
+    }
+
+    return {
+      type: "whatsapp" as const,
+      url: `https://wa.me{chiffres}?text=${corps}`,
+    };
+  }
   if (loading || !autorise) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">
-        Vérification des accès administrateur...
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center text-gray-500">
+        Vérification de l&apos;accès administrateur...
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <span className="inline-block bg-gray-900 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
+        <span className="inline-block bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
           Administration BARA
         </span>
-        <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Tableau de bord administrateur
+        </h1>
       </div>
 
-      {/* Onglets */}
-      <div className="flex flex-wrap gap-3 mb-8 border-b border-gray-200 pb-4">
-        <button
-          onClick={() => setOnglet("artisans")}
-          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
-            onglet === "artisans"
-              ? "bg-orange-600 text-white"
-              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-          }`}
-        >
-          Artisans ({artisans.length})
-        </button>
-
+      {/* Onglets de navigation */}
+      <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-4">
         <button
           onClick={() => setOnglet("messages")}
-          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
             onglet === "messages"
               ? "bg-orange-600 text-white"
-              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Messages ({messages.length})
+          📩 Messages ({messages.length})
         </button>
-
+        <button
+          onClick={() => setOnglet("artisans")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            onglet === "artisans"
+              ? "bg-orange-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          🛠️ Artisans ({artisans.length})
+        </button>
         <button
           onClick={() => setOnglet("avis")}
-          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
             onglet === "avis"
               ? "bg-orange-600 text-white"
-              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Avis clients ({avisListe.length})
+          ★ Avis ({avis.length})
         </button>
-
         <button
-          onClick={() => setOnglet("publicites")}
-          className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition ${
-            onglet === "publicites"
+          onClick={() => setOnglet("bannieres")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            onglet === "bannieres"
               ? "bg-orange-600 text-white"
-              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
         >
-          Publicités ({bannieres.length})
+          📢 Bannières ({bannieres.length})
         </button>
       </div>
-      {/* Onglet 1 : Artisans */}
-      {onglet === "artisans" && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="divide-y divide-gray-100">
-            {artisans.map((artisan) => (
-              <div
-                key={artisan.id}
-                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-gray-900">{artisan.name}</h2>
-                    {artisan.verifie && (
-                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ✓ Vérifié
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-0.5">
-                    {artisan.metier} • {artisan.commune || "Commune non renseignée"} •{" "}
-                    {artisan.telephone || "Sans téléphone"}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => basculerVerification(artisan)}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition ${
-                      artisan.verifie
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                  >
-                    {artisan.verifie ? "Retirer badge" : "Valider ✓"}
-                  </button>
-
-                  <button
-                    onClick={() => supprimerArtisan(artisan)}
-                    className="px-3.5 py-2 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Onglet 2 : Messages */}
+      {/* Onglet 1 : Messages de contact avec réponse directe */}
       {onglet === "messages" && (
         <div className="space-y-4">
           {messages.length === 0 ? (
-            <div className="bg-white rounded-2xl border p-8 text-center text-gray-500">
+            <p className="text-gray-500 text-center py-10">
               Aucun message reçu pour le moment.
-            </div>
+            </p>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-4 mb-2">
+            messages.map((msg) => {
+              const reponse = genererLienReponseContact(msg.nom, msg.contact);
+              return (
+                <div
+                  key={msg.id}
+                  className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+                >
                   <div>
-                    <h3 className="font-bold text-gray-900">{msg.nom}</h3>
-                    <p className="text-sm text-orange-600 font-medium">
-                      {msg.contact}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => supprimerMessage(msg.id)}
-                    className="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-                <p className="text-gray-700 text-sm mt-3 whitespace-pre-line">
-                  {msg.message}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Onglet 3 : Modération des avis clients */}
-      {onglet === "avis" && (
-        <div className="space-y-4">
-          {avisListe.length === 0 ? (
-            <div className="bg-white rounded-2xl border p-8 text-center text-gray-500">
-              Aucun avis publié pour le moment.
-            </div>
-          ) : (
-            avisListe.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-gray-900">{item.auteur_nom}</h3>
-                      <span className="text-yellow-500 text-sm">
-                        {"★".repeat(item.note)}
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h2 className="font-bold text-gray-900">{msg.nom}</h2>
+                      <span className="text-xs bg-orange-50 text-orange-700 font-semibold px-2.5 py-0.5 rounded-full">
+                        {msg.contact}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(msg.created_at).toLocaleDateString("fr-FR")}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Fiche artisan #{item.artisan_id}
+                    <p className="text-gray-700 text-sm mt-2 whitespace-pre-line">
+                      {msg.message}
                     </p>
-                  </div>
-                  <button
-                    onClick={() => supprimerAvis(item.id)}
-                    className="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
-                  >
-                    Supprimer l&apos;avis
-                  </button>
-                </div>
-                <p className="text-gray-700 text-sm mt-3 whitespace-pre-line">
-                  {item.commentaire}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-      {/* Onglet 4 : Publicités */}
-      {onglet === "publicites" && (
-        <div className="space-y-8">
-          <form
-            onSubmit={ajouterBanniere}
-            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4"
-          >
-            <h2 className="text-lg font-bold text-gray-900">
-              Ajouter une bannière partenaire
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Nom du partenaire / annonceur *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={partenaire}
-                  onChange={(e) => setPartenaire(e.target.value)}
-                  placeholder="Ex: Quincaillerie Treichville Pro"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Emplacement sur le site *
-                </label>
-                <select
-                  value={emplacement}
-                  onChange={(e) =>
-                    setEmplacement(e.target.value as "accueil" | "annuaire")
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
-                >
-                  <option value="accueil">Page d&apos;accueil</option>
-                  <option value="annuaire">Page Annuaire (/artisans)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Lien au clic (WhatsApp, Facebook ou site) *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={lienDestination}
-                  onChange={(e) => setLienDestination(e.target.value)}
-                  placeholder="https://wa.me"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Image bannière (format recommandé : 1200x300 px) *
-                </label>
-                <input
-                  id="input-pub-file"
-                  type="file"
-                  accept="image/*"
-                  required
-                  onChange={(e) => setFichierPub(e.target.files?.[0] || null)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={envoiPub}
-              className="bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 disabled:opacity-50"
-            >
-              {envoiPub ? "Publication en cours..." : "Publier la bannière"}
-            </button>
-          </form>
-
-          {/* Liste des bannières existantes */}
-          <div className="space-y-4">
-            {bannieres.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 text-center text-gray-500">
-                Aucune bannière publicitaire enregistrée.
-              </div>
-            ) : (
-              bannieres.map((pub) => (
-                <div
-                  key={pub.id}
-                  className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={pub.image_url}
-                      alt={pub.partenaire}
-                      className="w-28 h-14 object-cover rounded-lg border border-gray-200 shrink-0"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-gray-900">
-                          {pub.partenaire}
-                        </h3>
-                        <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            pub.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {pub.active ? "Active" : "En pause"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Emplacement : <strong>{pub.emplacement}</strong> •{" "}
-                        <strong>{pub.clics ?? 0} clics</strong>
-                      </p>
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => basculerEtatBanniere(pub)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-50"
+                    <a
+                      href={reponse.url}
+                      target={reponse.type === "whatsapp" ? "_blank" : undefined}
+                      rel={
+                        reponse.type === "whatsapp"
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
+                        reponse.type === "email"
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "bg-green-600 hover:bg-green-700"
+                      }`}
                     >
-                      {pub.active ? "Mettre en pause" : "Activer"}
-                    </button>
+                      {reponse.type === "email"
+                        ? "✉️ Répondre par e-mail"
+                        : "💬 Répondre sur WhatsApp"}
+                    </a>
+
                     <button
-                      onClick={() => supprimerBanniere(pub.id)}
-                      className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
+                      onClick={() => supprimerMessage(msg.id)}
+                      className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition"
                     >
                       Supprimer
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Onglet 2 : Artisans */}
+      {onglet === "artisans" && (
+        <div className="space-y-3">
+          {artisans.map((art) => (
+            <div
+              key={art.id}
+              className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            >
+              <div>
+                <h2 className="font-bold text-gray-900">{art.name}</h2>
+                <p className="text-xs text-gray-600">
+                  {art.metier} • 📍 {art.commune || "Abidjan"}
+                  {art.quartier ? ` (${art.quartier})` : ""} •{" "}
+                  {art.telephone || "Sans numéro"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => basculerVerification(art.id, art.verifie)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    art.verifie
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {art.verifie ? "✓ Vérifié" : "Valider le badge"}
+                </button>
+                <button
+                  onClick={() => supprimerArtisan(art.id, art.name)}
+                  className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Onglet 3 : Avis */}
+      {onglet === "avis" && (
+        <div className="space-y-3">
+          {avis.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4"
+            >
+              <div>
+                <p className="font-bold text-sm text-gray-900">
+                  {item.auteur} •{" "}
+                  <span className="text-yellow-600">★ {item.note}/5</span>
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {item.commentaire || "Sans commentaire"}
+                </p>
+              </div>
+              <button
+                onClick={() => supprimerAvis(item.id)}
+                className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 shrink-0"
+              >
+                Supprimer
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Onglet 4 : Bannières */}
+      {onglet === "bannieres" && (
+        <div className="space-y-3">
+          {bannieres.map((ban) => (
+            <div
+              key={ban.id}
+              className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4"
+            >
+              <div>
+                <p className="font-bold text-sm text-gray-900">{ban.titre}</p>
+                <p className="text-xs text-gray-500">
+                  Emplacement : {ban.emplacement} • Lien : {ban.lien_url}
+                </p>
+              </div>
+              <button
+                onClick={() => basculerBanniere(ban.id, ban.actif)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  ban.actif
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {ban.actif ? "Active" : "Désactivée"}
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
