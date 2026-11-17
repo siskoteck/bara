@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
 const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
+    // 1. Vérifier l'origine de la demande
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const source = origin || referer;
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. Limite anti-spam (max 3 e-mails / minute par IP)
     const ip = request.headers.get("x-forwarded-for") || "inconnue";
     const maintenant = Date.now();
     const envoisRecents = (historiqueIP.get(ip) || []).filter(
@@ -35,6 +38,7 @@ export async function POST(request: Request) {
     }
     historiqueIP.set(ip, [...envoisRecents, maintenant]);
 
+    // 3. Lire et valider le contenu
     const body = await request.json();
     const sujet = typeof body.sujet === "string" ? body.sujet.trim() : "";
     const contenu = typeof body.contenu === "string" ? body.contenu.trim() : "";
@@ -54,30 +58,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch("https://resend.com", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "onboarding@resend.dev",
-        to: ["cv2tcv2t@gmail.com"],
-        subject: sujet,
-        text: contenu,
-      }),
+    // 4. Envoyer l'e-mail via le SDK officiel Resend
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from: "BARA Abidjan <onboarding@resend.dev>",
+      to: ["cv2tcv2t@gmail.com"],
+      subject: sujet,
+      text: contenu,
     });
 
-    if (!response.ok) {
-      const texteBrut = await response.text();
+    if (error) {
       return NextResponse.json(
-        { error: `Resend (${response.status}): ${texteBrut}` },
+        { error: `Resend: ${error.message}` },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
+    return NextResponse.json({ success: true, id: data?.id });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err?.message || "Erreur serveur." },
+      { status: 500 }
+    );
   }
 }
