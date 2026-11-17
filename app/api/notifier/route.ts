@@ -5,7 +5,6 @@ const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
-    // 1. Vérifier l'origine de la demande
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const source = origin || referer;
@@ -23,7 +22,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Limite anti-spam (max 3 e-mails / minute par IP)
     const ip = request.headers.get("x-forwarded-for") || "inconnue";
     const maintenant = Date.now();
     const envoisRecents = (historiqueIP.get(ip) || []).filter(
@@ -38,10 +36,10 @@ export async function POST(request: Request) {
     }
     historiqueIP.set(ip, [...envoisRecents, maintenant]);
 
-    // 3. Lire et valider le contenu
     const body = await request.json();
     const sujet = typeof body.sujet === "string" ? body.sujet.trim() : "";
     const contenu = typeof body.contenu === "string" ? body.contenu.trim() : "";
+    const replyTo = typeof body.replyTo === "string" ? body.replyTo.trim() : "";
 
     if (!sujet || !contenu || sujet.length > 150 || contenu.length > 2500) {
       return NextResponse.json(
@@ -58,11 +56,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Envoyer l'e-mail via le SDK officiel Resend
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const replyToValide = emailRegex.test(replyTo) ? replyTo : undefined;
+
     const resend = new Resend(apiKey);
     const { data, error } = await resend.emails.send({
       from: "BARA Abidjan <onboarding@resend.dev>",
       to: ["cv2tcv2t@gmail.com"],
+      replyTo: replyToValide,
       subject: sujet,
       text: contenu,
     });

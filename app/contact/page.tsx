@@ -42,7 +42,7 @@ export default function ContactPage() {
       return;
     }
 
-    // 2. Déclencher l'envoi d'e-mail via /api/notifier
+    // 2. Déclencher l'envoi d'e-mail avec replyTo pour répondre en un clic depuis Gmail
     try {
       const res = await fetch("/api/notifier", {
         method: "POST",
@@ -50,6 +50,7 @@ export default function ContactPage() {
         body: JSON.stringify({
           sujet: `Nouveau message Contact BARA de ${nom}`,
           contenu: `Nom : ${nom}\nContact : ${contact}\n\nMessage :\n${message}`,
+          replyTo: contact,
         }),
       });
 
