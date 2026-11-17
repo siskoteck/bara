@@ -6,10 +6,10 @@ export function Header() {
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo DJASSA */}
+          {/* Logo BARA */}
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl font-extrabold tracking-tight text-orange-600">
-              DJASSA
+              BARA
             </span>
             <span className="text-xs font-medium bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full hidden sm:inline">
               Abidjan
@@ -19,16 +19,16 @@ export function Header() {
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
-              href="/annonces"
+              href="/artisans"
               className="text-gray-700 hover:text-orange-600 font-medium transition"
             >
-              Parcourir les annonces
+              Trouver un artisan
             </Link>
             <Link
-              href="/publier"
+              href="/demande"
               className="bg-orange-50 text-orange-600 hover:bg-orange-100 px-4 py-2 rounded-xl font-semibold text-sm transition"
             >
-              + Vendre un article
+              + Poster une demande
             </Link>
             <Link
               href="/comment-ca-marche"
@@ -42,16 +42,13 @@ export function Header() {
           <AuthButtons />
         </div>
 
-        {/* Navigation Mobile (visible uniquement sur téléphone) */}
+        {/* Navigation Mobile */}
         <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs font-medium text-gray-700">
-          <Link href="/annonces" className="hover:text-orange-600 py-1">
-            🔍 Annonces
+          <Link href="/artisans" className="hover:text-orange-600 py-1">
+            🔍 Artisans
           </Link>
-          <Link
-            href="/publier"
-            className="text-orange-600 font-semibold py-1"
-          >
-            ➕ Vendre un article
+          <Link href="/demande" className="text-orange-600 font-semibold py-1">
+            ➕ Poster un besoin
           </Link>
           <Link href="/comment-ca-marche" className="hover:text-orange-600 py-1">
             ℹ️ Aide

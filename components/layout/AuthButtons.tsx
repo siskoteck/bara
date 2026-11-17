@@ -10,6 +10,7 @@ const ADMIN_EMAIL = "cv2tcv2t@gmail.com";
 export default function AuthButtons() {
   const router = useRouter();
   const [nom, setNom] = useState<string | null>(null);
+  const [estArtisan, setEstArtisan] = useState(false);
   const [estAdmin, setEstAdmin] = useState(false);
   const [connecte, setConnecte] = useState(false);
   const [pret, setPret] = useState(false);
@@ -18,6 +19,7 @@ export default function AuthButtons() {
     function appliquer(user: any) {
       setConnecte(!!user);
       setNom(user?.user_metadata?.nom ?? null);
+      setEstArtisan(user?.user_metadata?.type_compte === "artisan");
       setEstAdmin(user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     }
 
@@ -53,11 +55,19 @@ export default function AuthButtons() {
           </Link>
         )}
         <Link
-          href="/mes-annonces"
+          href="/mes-demandes"
           className="text-sm font-medium text-gray-700 hover:text-orange-600"
         >
-          Mes annonces
+          Mes demandes
         </Link>
+        {estArtisan && (
+          <Link
+            href="/mon-profil"
+            className="text-sm font-medium text-orange-600 hover:underline"
+          >
+            Mon profil
+          </Link>
+        )}
         <span className="text-sm text-gray-700 hidden lg:inline">
           {nom ?? "Mon compte"}
         </span>
