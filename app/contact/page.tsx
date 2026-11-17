@@ -11,10 +11,19 @@ export default function ContactPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     const formData = new FormData(e.currentTarget);
+
+    // Blocage silencieux des robots (Honeypot)
+    const piegeRobot = formData.get("site_web") as string;
+    if (piegeRobot) {
+      setEnvoye(true);
+      return;
+    }
+
+    setLoading(true);
+
     const nom = (formData.get("nom") as string).trim();
     const contact = (formData.get("contact") as string).trim();
     const message = (formData.get("message") as string).trim();
@@ -30,6 +39,19 @@ export default function ContactPage() {
       );
       setLoading(false);
       return;
+    }
+
+    try {
+      await fetch("/api/notifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sujet: `Nouveau message Contact BARA de ${nom}`,
+          contenu: `Nom : ${nom}\nContact : ${contact}\n\nMessage :\n${message}`,
+        }),
+      });
+    } catch (mailError) {
+      console.error("Erreur notification e-mail:", mailError);
     }
 
     setEnvoye(true);
@@ -62,7 +84,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href="https://wa.me/qr/KBH36JDX5MLEM1?s=r"
+            href="https://wa.me"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-green-600 font-semibold text-sm mt-1 hover:underline"
@@ -91,6 +113,14 @@ export default function ContactPage() {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8 space-y-5"
         >
+          <input
+            type="text"
+            name="site_web"
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+          />
+
           <div>
             <label htmlFor="nom" className="block text-sm font-medium mb-1">
               Nom complet *

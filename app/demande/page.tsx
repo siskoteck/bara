@@ -18,10 +18,19 @@ export default function DemandePage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     const formData = new FormData(e.currentTarget);
+
+    // Blocage silencieux des robots (Honeypot)
+    const piegeRobot = formData.get("site_web") as string;
+    if (piegeRobot) {
+      setEnvoye(true);
+      return;
+    }
+
+    setLoading(true);
+
     const metierChoisi = formData.get("categorie") as string;
     const descriptionSaisie = (formData.get("description") as string).trim();
     const telephoneSaisi = (formData.get("telephone") as string).trim();
@@ -61,7 +70,7 @@ export default function DemandePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sujet: `🛠️ Nouvelle demande : ${metierChoisi} à ${communeChoisie}`,
+          sujet: `Nouvelle demande : ${metierChoisi} à ${communeChoisie}`,
           contenu: `Métier : ${metierChoisi}\nCommune : ${communeChoisie}${
             quartierPropre ? ` (${quartierPropre})` : ""
           }\nTéléphone client : ${telephoneSaisi}\nBudget : ${
@@ -76,6 +85,7 @@ export default function DemandePage() {
     setEnvoye(true);
     setLoading(false);
   }
+
   if (envoye) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -115,6 +125,14 @@ export default function DemandePage() {
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl shadow-sm border p-8 space-y-6"
       >
+        <input
+          type="text"
+          name="site_web"
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+        />
+
         <div>
           <label htmlFor="categorie" className="block text-sm font-medium mb-2">
             Métier recherché *
@@ -193,7 +211,7 @@ export default function DemandePage() {
               onChange={(e) => setQuartierSaisi(e.target.value)}
               placeholder={
                 suggestionsQuartiers.length > 0
-                  ? `Ex: ${suggestionsQuartiers[0]}...`
+                  ? `Ex: ${suggestionsQuartiers}...`
                   : "Choisir ou taper un quartier"
               }
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
