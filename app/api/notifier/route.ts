@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 
-// Mémoire simple pour limiter les abus par IP (max 3 envois par minute)
 const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
-    // 1. Vérifier que la requête provient bien de votre site BARA
+    // 1. Vérifier l'origine de la demande
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const domainesAutorises = [
       "https://vercel.app",
+      "https://bara.ci",
       "https://bara.ci",
       "http://localhost:3000",
     ];
@@ -25,12 +25,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Limiter la fréquence par adresse IP (anti-spam)
+    // 2. Limite anti-spam (max 3 e-mails / minute par IP)
     const ip = request.headers.get("x-forwarded-for") || "inconnue";
     const maintenant = Date.now();
-    const fenetreMs = 60 * 1000; // 1 minute
     const envoisRecents = (historiqueIP.get(ip) || []).filter(
-      (t) => maintenant - t < fenetreMs
+      (t) => maintenant - t < 60 * 1000
     );
 
     if (envoisRecents.length >= 3) {
@@ -41,22 +40,23 @@ export async function POST(request: Request) {
     }
     historiqueIP.set(ip, [...envoisRecents, maintenant]);
 
-    // 3. Valider le contenu du message
+    // 3. Lire et valider le contenu
     const body = await request.json();
     const sujet = typeof body.sujet === "string" ? body.sujet.trim() : "";
     const contenu = typeof body.contenu === "string" ? body.contenu.trim() : "";
 
     if (!sujet || !contenu || sujet.length > 150 || contenu.length > 2500) {
       return NextResponse.json(
-        { error: "Contenu invalide ou trop long." },
+        { error: "Contenu invalide." },
         { status: 400 }
       );
     }
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
+      console.error("RESEND_API_KEY manquante dans les variables d'environnement.");
       return NextResponse.json(
-        { error: "Clé Resend non configurée." },
+        { error: "Configuration e-mail manquante." },
         { status: 500 }
       );
     }
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const errData = await response.text();
       console.error("Erreur Resend:", errData);
       return NextResponse.json(
-        { error: "Échec de l'envoi de l'e-mail." },
+        { error: "Échec de l'envoi Resend." },
         { status: 502 }
       );
     }
