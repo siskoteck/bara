@@ -155,14 +155,16 @@ export default function AdminPage() {
   function genererLienReponseContact(nom: string, contact: string) {
     const valeur = (contact || "").trim();
     const sujet = encodeURIComponent("Réponse de l'équipe BARA Abidjan");
-    const corps = encodeURIComponent(
+    const corpsMail = encodeURIComponent(
       `Bonjour ${nom},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
     );
 
     if (valeur.includes("@")) {
       return {
         type: "email" as const,
-        url: `mailto:${valeur}?subject=${sujet}&body=${corps}`,
+        url: `https://google.com{encodeURIComponent(
+          valeur
+        )}&su=${sujet}&body=${corpsMail}`,
       };
     }
 
@@ -173,9 +175,13 @@ export default function AdminPage() {
       chiffres = chiffres.slice(2);
     }
 
+    const texteWhatsApp = encodeURIComponent(
+      `Bonjour ${nom}, merci pour votre message sur BARA Abidjan.`
+    );
+
     return {
       type: "whatsapp" as const,
-      url: `https://wa.me{chiffres}?text=${corps}`,
+      url: `https://whatsapp.com{chiffres}&text=${texteWhatsApp}`,
     };
   }
   if (loading || !autorise) {
@@ -274,12 +280,8 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <a
                       href={reponse.url}
-                      target={reponse.type === "whatsapp" ? "_blank" : undefined}
-                      rel={
-                        reponse.type === "whatsapp"
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
                         reponse.type === "email"
                           ? "bg-blue-600 hover:bg-blue-700"
