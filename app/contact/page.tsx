@@ -62,7 +62,7 @@ export default function ContactPage() {
           <div className="text-2xl mb-2">💬</div>
           <h2 className="font-semibold text-gray-900 text-sm">Assistance rapide</h2>
           <a
-            href="https://whatsapp.com"
+            href="https://wa.me/qr/KBH36JDX5MLEM1?s=r"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-green-600 font-semibold text-sm mt-1 hover:underline"
