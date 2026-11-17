@@ -4,7 +4,6 @@ const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
-    // 1. Vérifier l'origine de la demande
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const source = origin || referer;
@@ -22,7 +21,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Limite anti-spam (max 3 e-mails / minute par IP)
     const ip = request.headers.get("x-forwarded-for") || "inconnue";
     const maintenant = Date.now();
     const envoisRecents = (historiqueIP.get(ip) || []).filter(
@@ -37,7 +35,6 @@ export async function POST(request: Request) {
     }
     historiqueIP.set(ip, [...envoisRecents, maintenant]);
 
-    // 3. Lire et valider le contenu
     const body = await request.json();
     const sujet = typeof body.sujet === "string" ? body.sujet.trim() : "";
     const contenu = typeof body.contenu === "string" ? body.contenu.trim() : "";
@@ -49,7 +46,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = (process.env.RESEND_API_KEY || "").trim();
     if (!apiKey) {
       return NextResponse.json(
         { error: "Configuration e-mail manquante." },
@@ -57,7 +54,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Envoyer l'e-mail via Resend
     const response = await fetch("https://resend.com", {
       method: "POST",
       headers: {
@@ -65,7 +61,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "BARA Abidjan <onboarding@resend.dev>",
+        from: "onboarding@resend.dev",
         to: ["cv2tcv2t@gmail.com"],
         subject: sujet,
         text: contenu,
@@ -73,17 +69,15 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      console.error("Erreur Resend:", errData);
+      const texteBrut = await response.text();
       return NextResponse.json(
-        { error: errData.message || "Échec de l'envoi Resend." },
+        { error: `Resend (${response.status}): ${texteBrut}` },
         { status: 502 }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Erreur API notifier:", error);
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }
