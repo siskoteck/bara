@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { RealisationsUpload } from "@/components/RealisationsUpload";
+import { SupprimerCompteButton } from "@/components/SupprimerCompteButton";
 
 type Fiche = {
   id: number;
@@ -73,6 +74,7 @@ export default function MonProfilPage() {
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
     : [];
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!userId) return;
@@ -114,7 +116,6 @@ export default function MonProfilPage() {
       setSaving(false);
     }
   }
-
   if (chargement) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-gray-500">
@@ -173,8 +174,8 @@ export default function MonProfilPage() {
             />
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Statut de disponibilité */}
           <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
             <div>
               <p className="font-semibold text-sm text-gray-900">
@@ -230,7 +231,6 @@ export default function MonProfilPage() {
             </select>
           </div>
 
-          {/* Commune + Sous-quartier intelligent */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="commune" className="block text-sm font-medium mb-1">
@@ -338,6 +338,8 @@ export default function MonProfilPage() {
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
         </form>
+
+        <SupprimerCompteButton />
       </div>
     </div>
   );

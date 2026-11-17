@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { SupprimerCompteButton } from "@/components/SupprimerCompteButton";
 
 interface Demande {
   id: number;
@@ -41,7 +42,6 @@ export default function MesDemandesPage() {
 
       setUserId(user.id);
 
-      // 1. Charger les demandes postées par l'utilisateur connecté
       const { data: perso } = await supabase
         .from("demandes")
         .select("*")
@@ -52,7 +52,6 @@ export default function MesDemandesPage() {
         setMesDemandes(perso as Demande[]);
       }
 
-      // 2. Vérifier si l'utilisateur est un artisan pour lui montrer les chantiers de son métier
       const { data: ficheArtisan } = await supabase
         .from("artisans")
         .select("metier, commune")
@@ -125,7 +124,6 @@ export default function MesDemandesPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-12">
-      {/* Section Artisan : Demandes de clients correspondant à son métier */}
       {estArtisan && (
         <section>
           <div className="mb-6">
@@ -210,7 +208,6 @@ export default function MesDemandesPage() {
         </section>
       )}
 
-      {/* Section Particulier : Mes propres demandes envoyées */}
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -284,6 +281,8 @@ export default function MesDemandesPage() {
           </div>
         )}
       </section>
+
+      <SupprimerCompteButton />
     </div>
   );
 }
