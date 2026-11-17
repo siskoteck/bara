@@ -4,7 +4,7 @@ const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
-    // 1. Vérifier l'origine de la demande (autorise votre domaine Vercel et futur domaine bara.ci)
+    // 1. Vérifier l'origine de la demande
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const source = origin || referer;
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
-      console.error("RESEND_API_KEY manquante dans les variables d'environnement.");
       return NextResponse.json(
         { error: "Configuration e-mail manquante." },
         { status: 500 }
@@ -74,10 +73,10 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      const errData = await response.text();
+      const errData = await response.json().catch(() => ({}));
       console.error("Erreur Resend:", errData);
       return NextResponse.json(
-        { error: "Échec de l'envoi Resend." },
+        { error: errData.message || "Échec de l'envoi Resend." },
         { status: 502 }
       );
     }
