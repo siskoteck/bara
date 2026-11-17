@@ -4,19 +4,16 @@ const historiqueIP = new Map<string, number[]>();
 
 export async function POST(request: Request) {
   try {
-    // 1. Vérifier l'origine de la demande
+    // 1. Vérifier l'origine de la demande (autorise votre domaine Vercel et futur domaine bara.ci)
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
-    const domainesAutorises = [
-      "https://vercel.app",
-      "https://bara.ci",
-      "https://bara.ci",
-      "http://localhost:3000",
-    ];
+    const source = origin || referer;
 
-    const origineValide = domainesAutorises.some(
-      (domaine) => origin.startsWith(domaine) || referer.startsWith(domaine)
-    );
+    const origineValide =
+      source.startsWith("http://localhost:3000") ||
+      source.startsWith("https://bara.ci") ||
+      source.startsWith("https://bara.ci") ||
+      (source.startsWith("https://bara") && source.includes(".vercel.app"));
 
     if (!origineValide) {
       return NextResponse.json(
