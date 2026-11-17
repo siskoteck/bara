@@ -27,11 +27,8 @@ const MENUS: Record<TypeCompte, Lien[]> = {
     { href: "/comment-ca-marche", label: "Comment ça marche", mobile: "ℹ️ Aide" },
   ],
   artisan: [
-    // Adapte "/mon-profil" au vrai chemin de ta page « Mon profil »
     { href: "/mon-profil", label: "Mon profil", mobile: "👤 Mon profil", cta: true },
-    // Décommente cette ligne quand la page « Demandes de clients » existera :
-    // { href: "/demandes-clients", label: "Demandes de clients", mobile: "📥 Demandes" },
-    { href: "/artisans", label: "Annuaire", mobile: "🔍 Annuaire" },
+    { href: "/demandes-clients", label: "Demandes de clients", mobile: "📥 Demandes" },
     { href: "/comment-ca-marche", label: "Comment ça marche", mobile: "ℹ️ Aide" },
   ],
 };
