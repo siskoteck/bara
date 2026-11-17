@@ -73,3 +73,28 @@ export default function AuthButtons() {
         >
           {nom ?? "Mon compte"}
         </span>
+
+        <button
+          onClick={deconnexion}
+          className="text-sm text-gray-600 hover:underline"
+        >
+          Déconnexion
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Link href="/auth/login" className="text-sm font-medium hover:underline">
+        Connexion
+      </Link>
+      <Link
+        href="/auth/register"
+        className="text-sm font-semibold bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+      >
+        S&apos;inscrire
+      </Link>
+    </div>
+  );
+}
