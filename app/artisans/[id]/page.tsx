@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
+import { BoutonRecommander } from "@/components/BoutonRecommander";
 
 interface Artisan {
-  id: number;
+  id: string;
   name: string;
   metier: string;
   commune: string | null;
@@ -19,23 +20,26 @@ interface Artisan {
   verifie: boolean | null;
   disponible: boolean | null;
   derniere_activite?: string | null;
+  recommandations?: number;
 }
 
 interface Avis {
-  id: number;
+  id: number | string;
   created_at: string;
   auteur: string;
   note: number;
   commentaire: string | null;
 }
-
 export default function FicheArtisanPage() {
   const params = useParams();
-  const id = Number(params?.id);
+  const rawId = params?.id;
+  const idBrut = Array.isArray(rawId) ? rawId[0] : rawId || "";
+  const id = decodeURIComponent(idBrut);
 
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [avis, setAvis] = useState<Avis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState("");
 
   const [auteur, setAuteur] = useState("");
   const [note, setNote] = useState(5);
@@ -45,7 +49,8 @@ export default function FicheArtisanPage() {
 
   useEffect(() => {
     async function chargerFiche() {
-      if (!id || Number.isNaN(id)) {
+      if (!id || id === "undefined" || id === "null") {
+        setErreurChargement("Identifiant manquant dans l'adresse URL.");
         setLoading(false);
         return;
       }
@@ -59,7 +64,13 @@ export default function FicheArtisanPage() {
           .order("created_at", { ascending: false }),
       ]);
 
-      if (resArtisan.data) setArtisan(resArtisan.data as Artisan);
+      if (resArtisan.error) {
+        console.error("Erreur Supabase artisan:", resArtisan.error);
+        setErreurChargement(resArtisan.error.message);
+      } else if (resArtisan.data) {
+        setArtisan(resArtisan.data as Artisan);
+      }
+
       if (resAvis.data) setAvis(resAvis.data as Avis[]);
       setLoading(false);
     }
@@ -113,7 +124,6 @@ export default function FicheArtisanPage() {
     );
     return "https://wa.me" + chiffres + "?text=" + texte;
   }
-
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
@@ -125,15 +135,22 @@ export default function FicheArtisanPage() {
   if (!artisan) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Artisan introuvable
         </h1>
-        <Link
-          href="/artisans"
-          className="text-orange-600 font-semibold hover:underline"
-        >
-          ← Retour à l&apos;annuaire
-        </Link>
+        {erreurChargement && (
+          <p className="text-xs text-red-600 bg-red-50 inline-block px-3 py-1.5 rounded-lg mb-4">
+            Détail technique : {erreurChargement}
+          </p>
+        )}
+        <div>
+          <Link
+            href="/artisans"
+            className="text-orange-600 font-semibold hover:underline"
+          >
+            ← Retour à l&apos;annuaire
+          </Link>
+        </div>
       </div>
     );
   }
@@ -150,12 +167,11 @@ export default function FicheArtisanPage() {
   const initiales = artisan.name
     ? artisan.name
         .split(" ")
-        .map((n) => n[0])
+        .map((mot) => mot[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "A";
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <Link
@@ -165,7 +181,6 @@ export default function FicheArtisanPage() {
         ← Retour aux artisans
       </Link>
 
-      {/* Carte principale de l'artisan */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {artisan.avatar_url ? (
@@ -225,7 +240,6 @@ export default function FicheArtisanPage() {
               )}
             </p>
 
-            {/* Boutons de contact direct */}
             {artisan.telephone && (
               <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
                 <a
@@ -244,10 +258,14 @@ export default function FicheArtisanPage() {
                 </a>
               </div>
             )}
+            <BoutonRecommander
+              artisanId={artisan.id}
+              commune={artisan.commune}
+              compteurInitial={artisan.recommandations ?? 0}
+            />
           </div>
         </div>
 
-        {/* Bouton Partager la fiche à un proche (Sécurité visite à domicile) */}
         <PartageSecuriteProche
           id={artisan.id}
           nom={artisan.name}
@@ -258,7 +276,6 @@ export default function FicheArtisanPage() {
           verifie={artisan.verifie}
         />
 
-        {/* Présentation */}
         {artisan.description && (
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-2">
@@ -269,7 +286,7 @@ export default function FicheArtisanPage() {
             </p>
           </div>
         )}
-        {/* Galerie des réalisations */}
+
         {artisan.realisations && artisan.realisations.length > 0 && (
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
@@ -295,8 +312,6 @@ export default function FicheArtisanPage() {
           </div>
         )}
       </div>
-
-      {/* Section Avis Clients */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Avis des clients ({avis.length})
