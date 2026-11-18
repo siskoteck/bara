@@ -15,37 +15,39 @@ export function Header() {
               Abidjan
             </span>
           </Link>
+
           {/* Navigation Desktop */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-5">
             <Link
               href="/artisans"
-              className="text-gray-700 hover:text-orange-600 font-medium transition"
+              className="text-gray-700 hover:text-orange-600 font-medium text-sm transition"
             >
-              Trouver un artisan
+              Artisans
             </Link>
             <Link
               href="/tarifs"
-              className="text-gray-700 hover:text-orange-600 font-medium transition"
+              className="text-gray-700 hover:text-orange-600 font-medium text-sm transition"
             >
               Tarifs
             </Link>
             <Link
-              href="/demande"
-              className="bg-orange-50 text-orange-600 hover:bg-orange-100 px-4 py-2 rounded-xl font-semibold text-sm transition"
+              href="/conseils"
+              className="text-gray-700 hover:text-orange-600 font-medium text-sm transition"
             >
-              + Poster une demande
+              Conseils
             </Link>
             <Link
-              href="/comment-ca-marche"
-              className="text-gray-700 hover:text-orange-600 font-medium transition"
+              href="/demande"
+              className="bg-orange-50 text-orange-600 hover:bg-orange-100 px-3.5 py-2 rounded-xl font-semibold text-sm transition"
             >
-              Comment ça marche
+              + Poster une demande
             </Link>
           </nav>
 
           {/* Boutons de connexion / compte */}
           <AuthButtons />
         </div>
+
         {/* Navigation Mobile */}
         <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs font-medium text-gray-700">
           <Link href="/artisans" className="hover:text-orange-600 py-1">
@@ -54,11 +56,11 @@ export function Header() {
           <Link href="/tarifs" className="hover:text-orange-600 py-1">
             💰 Tarifs
           </Link>
+          <Link href="/conseils" className="hover:text-orange-600 py-1">
+            💡 Conseils
+          </Link>
           <Link href="/demande" className="text-orange-600 font-semibold py-1">
             ➕ Besoin
-          </Link>
-          <Link href="/comment-ca-marche" className="hover:text-orange-600 py-1">
-            ℹ️ Aide
           </Link>
         </nav>
       </div>
