@@ -8,6 +8,7 @@ import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { RealisationsUpload } from "@/components/RealisationsUpload";
 import { CarteVisiteArtisan } from "@/components/CarteVisiteArtisan";
+import { GenerateurDevisPDF } from "@/components/GenerateurDevisPDF";
 import { SupprimerCompteButton } from "@/components/SupprimerCompteButton";
 
 type Fiche = {
@@ -298,7 +299,6 @@ export default function MonProfilPage() {
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
             />
           </div>
-
           <div>
             <label htmlFor="metier" className="block text-sm font-medium mb-1">
               Métier principal
@@ -431,6 +431,14 @@ export default function MonProfilPage() {
           metier={fiche.metier ?? "Artisan"}
           commune={fiche.commune}
           quartier={fiche.quartier}
+          telephone={fiche.telephone}
+          verifie={fiche.verifie}
+        />
+
+        <GenerateurDevisPDF
+          nomArtisan={fiche.name ?? "Artisan BARA"}
+          metier={fiche.metier ?? "Artisan"}
+          commune={fiche.commune}
           telephone={fiche.telephone}
           verifie={fiche.verifie}
         />
