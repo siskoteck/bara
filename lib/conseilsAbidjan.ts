@@ -129,5 +129,121 @@ export const CONSEILS_ABIDJAN: ArticleConseil[] = [
     ],
     astucePro:
       "Conservez toujours le numéro d'un serrurier vérifié BARA de votre commune dans votre téléphone en cas de porte claquée.",
+  },  {
+    slug: "eviter-humidite-salpetre-murs-peinture-abidjan",
+    titre: "Peinture qui cloque et humidité sur les murs : comment traiter durablement ?",
+    categorie: "Peinture & Rénovation",
+    metierLie: "Peintre",
+    icone: "🎨",
+    tempsLecture: "3 min",
+    resume:
+      "Avec la proximité de la lagune et l'humidité à Abidjan, les murs du bas s'écaillent vite. Voici les étapes pour une peinture qui tient dans le temps.",
+    sections: [
+      {
+        sousTitre: "1. Ne jamais peindre directement sur un mur humide",
+        contenu:
+          "Appliquer une nouvelle couche de peinture sur un mur qui cloque ne règle rien : l'humidité repoussera la peinture en quelques semaines. Il faut d'abord gratter toute la partie abîmée jusqu'au ciment.",
+      },
+      {
+        sousTitre: "2. Appliquer un traitement hydrofuge anti-salpêtre",
+        contenu:
+          "Après brossage et séchage complet du mur, faites appliquer un durcisseur anti-humidité (hydrofuge de surface) avant de poser l'enduit de lissage.",
+      },
+      {
+        sousTitre: "3. Choisir une peinture acrylique lessivable de qualité",
+        contenu:
+          "Pour les pièces de vie, les couloirs et les façades exposées à la pluie, privilégiez une peinture acrylique satinée ou spéciale façade résistante aux moisissures.",
+      },
+    ],
+    astucePro:
+      "Vérifiez toujours qu'il n'y a pas une micro-fuite d'eau encastrée derrière le mur avant de refaire l'enduit et la peinture.",
   },
+  {
+    slug: "entretien-voiture-embouteillages-chaleur-abidjan",
+    titre: "Embouteillages et chaleur à Abidjan : 4 contrôles vitaux pour votre voiture",
+    categorie: "Mécanique Auto",
+    metierLie: "Mécanicien auto / moto",
+    icone: "🚗",
+    tempsLecture: "4 min",
+    resume:
+      "Les bouchons quotidiens sur les ponts et boulevards d'Abidjan sollicitent fortement le moteur et la climatisation. Protégez votre véhicule.",
+    sections: [
+      {
+        sousTitre: "1. Surveiller le circuit de refroidissement et le radiateur",
+        contenu:
+          "Dans les embouteillages à l'arrêt, le moteur chauffe vite. Utilisez toujours du liquide de refroidissement (jamais d'eau du robinet qui rouille le radiateur) et vérifiez le déclenchement des ventilateurs.",
+      },
+      {
+        sousTitre: "2. Rapprocher la fréquence des vidanges moteur",
+        contenu:
+          "Un moteur qui tourne 2 heures par jour dans les bouchons s'use autant que sur autoroute. À Abidjan, faites la vidange tous les 5 000 à 7 000 km avec remplacement du filtre à huile.",
+      },
+      {
+        sousTitre: "3. Nettoyer le filtre à air et le filtre d'habitacle",
+        contenu:
+          "La poussière encrasse rapidement le filtre à air, ce qui augmente votre consommation de carburant. Un soufflage régulier et un remplacement à chaque vidange préservent votre moteur.",
+      },
+    ],
+    astucePro:
+      "Avant un long voyage vers l'intérieur du pays, faites contrôler l'état de la batterie, des plaquettes de frein et des pneus par un mécanicien BARA.",
+  },
+  {
+    slug: "proteger-meubles-bois-termites-humidite-abidjan",
+    titre: "Comment protéger vos meubles et portes en bois contre les termites et l'humidité ?",
+    categorie: "Menuiserie & Bois",
+    metierLie: "Menuisier",
+    icone: "🪚",
+    tempsLecture: "3 min",
+    resume:
+      "Portes qui gonflent en saison des pluies ou attaque d'insectes du bois : les bonnes pratiques pour préserver vos aménagements.",
+    sections: [
+      {
+        sousTitre: "1. Appliquer un traitement insecticide et fongicide préventif",
+        contenu:
+          "Avant tout vernis ou peinture sur une porte neuve ou un placard, exigez l'application de deux couches de produit de traitement du bois contre les termites et les vrillettes.",
+      },
+      {
+        sousTitre: "2. Isoler le bas des portes et meubles de l'eau de lavage",
+        contenu:
+          "Lors du lavage des sols à grande eau, le bas des portes absorbe l'humidité et gonfle. Demandez à votre menuisier de vernir également la tranche inférieure de la porte.",
+      },
+      {
+        sousTitre: "3. Privilégier des essences locales durables",
+        contenu:
+          "Pour les portes extérieures et huisseries exposées, choisissez des bois durs locaux reconnus comme l'Iroko ou le Fraké bien sec.",
+      },
+    ],
+    astucePro:
+      "Si vous voyez de fines traces de sciure au pied d'un cadre de porte, faites traiter immédiatement la zone avant que les dégâts ne s'étendent.",
+  },
+  {
+    slug: "reduire-facture-eau-sodeci-detecter-fuites-cachees",
+    titre: "Facture d'eau trop élevée ? Comment détecter une fuite cachée chez soi",
+    categorie: "Plomberie & Sanitaire",
+    metierLie: "Plombier",
+    icone: "🔧",
+    tempsLecture: "3 min",
+    resume:
+      "Une chasse d'eau qui coule silencieusement peut doubler votre facture SODECI. Voici comment tester votre installation en 5 minutes.",
+    sections: [
+      {
+        sousTitre: "1. Le test du compteur la nuit",
+        contenu:
+          "Le soir avant de dormir, fermez tous les robinets de la maison et relevez les chiffres de votre compteur d'eau. Si les chiffres ont bougé le matin sans que personne n'ait tiré d'eau, vous avez une fuite.",
+      },
+      {
+        sousTitre: "2. Vérifier le mécanisme de la chasse d'eau",
+        contenu:
+          "Un mince filet d'eau permanent dans la cuvette des WC représente des centaines de litres perdus chaque jour. Le remplacement du joint ou du flotteur coûte peu cher et prend 20 minutes.",
+      },
+      {
+        sousTitre: "3. Contrôler les flexibles sous éviers et lavabos",
+        contenu:
+          "Passez la main sur les flexibles tressés sous vos lavabos et votre chauffe-eau : la moindre humidité annonce une rupture prochaine du flexible.",
+      },
+    ],
+    astucePro:
+      "Installez une vanne d'arrêt générale accessible à l'entrée de votre logement pour pouvoir couper l'eau rapidement en cas d'urgence.",
+  },
+
 ];
