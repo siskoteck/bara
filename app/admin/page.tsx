@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { compresserImage } from "@/lib/compressionImage";
 
 const ADMIN_EMAIL = "cv2tcv2t@gmail.com";
 
@@ -41,7 +42,6 @@ interface BanniereAdmin {
   emplacement: string;
   actif: boolean;
 }
-
 export default function AdminPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
@@ -52,6 +52,7 @@ export default function AdminPage() {
   const [filtreBadge, setFiltreBadge] = useState<
     "tous" | "en_attente" | "verifies"
   >("tous");
+  const [ajoutBanniereEnCours, setAjoutBanniereEnCours] = useState(false);
 
   const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
   const [avis, setAvis] = useState<AvisAdmin[]>([]);
@@ -157,6 +158,72 @@ export default function AdminPage() {
     }
   }
 
+  async function handleAjouterBanniere(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setAjoutBanniereEnCours(true);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const titre = (formData.get("titre") as string).trim();
+    const lien_url = (formData.get("lien_url") as string).trim();
+    const emplacement = formData.get("emplacement") as string;
+    const fichier = formData.get("image") as File;
+
+    try {
+      if (!fichier || fichier.size === 0) {
+        throw new Error("Veuillez sélectionner une image pour la bannière.");
+      }
+
+      const fichierOpti = await compresserImage(fichier, 1400, 0.85);
+      const chemin = "bannieres/pub-" + Date.now() + ".jpg";
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(chemin, fichierOpti, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(chemin);
+
+      const { data: nouvelle, error: insertError } = await supabase
+        .from("bannieres")
+        .insert([
+          {
+            titre,
+            image_url: urlData.publicUrl,
+            lien_url,
+            emplacement,
+            actif: true,
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      if (nouvelle) {
+        setBannieres((prev) => [nouvelle, ...prev]);
+        form.reset();
+      }
+    } catch (err: any) {
+      alert("Erreur ajout bannière : " + (err.message || "Erreur inconnue"));
+    } finally {
+      setAjoutBanniereEnCours(false);
+    }
+  }
+
+  async function supprimerBanniere(id: number, titre: string) {
+    if (!confirm(`Supprimer définitivement la bannière "${titre}" ?`)) return;
+    const { error } = await supabase.from("bannieres").delete().eq("id", id);
+    if (!error) {
+      setBannieres((prev) => prev.filter((b) => b.id !== id));
+    }
+  }
   function genererLienReponseContact(nom: string, contact: string) {
     const valeur = (contact || "").trim();
     const nomPropre = (nom || "Client").trim();
@@ -265,7 +332,7 @@ export default function AdminPage() {
           📢 Bannières ({bannieres.length})
         </button>
       </div>
-      {/* Onglet 1 : Artisans et gestion des badges */}
+      {/* Onglet 1 : Artisans */}
       {onglet === "artisans" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -301,7 +368,6 @@ export default function AdminPage() {
                 ✓ Vérifiés ({artisans.filter((a) => a.verifie).length})
               </button>
             </div>
-
             <p className="text-xs text-gray-500">
               Contrôlez la fiche avant d&apos;accorder le badge ✓ Vérifié.
             </p>
@@ -325,7 +391,6 @@ export default function AdminPage() {
                     </span>
                   )}
                 </div>
-
                 <p className="text-xs text-gray-600 mt-1">
                   {art.metier} • 📍 {art.commune || "Abidjan"}
                   {art.quartier ? ` (${art.quartier})` : ""} •{" "}
@@ -342,7 +407,6 @@ export default function AdminPage() {
                 >
                   👁️ Voir fiche
                 </a>
-
                 <button
                   onClick={() => basculerVerification(art.id, art.verifie)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -353,7 +417,6 @@ export default function AdminPage() {
                 >
                   {art.verifie ? "Retirer le badge" : "✓ Valider le badge"}
                 </button>
-
                 <button
                   onClick={() => supprimerArtisan(art.id, art.name)}
                   className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
@@ -366,7 +429,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Onglet 2 : Messages de contact */}
+      {/* Onglet 2 : Messages */}
       {onglet === "messages" && (
         <div className="space-y-4">
           {messages.length === 0 ? (
@@ -411,7 +474,6 @@ export default function AdminPage() {
                         ? "✉️ Répondre sur Gmail"
                         : "💬 Répondre sur WhatsApp"}
                     </a>
-
                     <button
                       type="button"
                       onClick={() => supprimerMessage(msg.id)}
@@ -454,33 +516,146 @@ export default function AdminPage() {
           ))}
         </div>
       )}
-
-      {/* Onglet 4 : Bannières */}
+      {/* Onglet 4 : Bannières publicitaires */}
       {onglet === "bannieres" && (
-        <div className="space-y-3">
-          {bannieres.map((ban) => (
-            <div
-              key={ban.id}
-              className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-4"
-            >
+        <div className="space-y-8">
+          <form
+            onSubmit={handleAjouterBanniere}
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">
+              + Ajouter une bannière publicitaire
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="font-bold text-sm text-gray-900">{ban.titre}</p>
-                <p className="text-xs text-gray-500">
-                  Emplacement : {ban.emplacement} • Lien : {ban.lien_url}
-                </p>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Nom de l&apos;annonceur / Titre *
+                </label>
+                <input
+                  name="titre"
+                  type="text"
+                  required
+                  placeholder="Ex: Quincaillerie Abidjan Promo"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
               </div>
-              <button
-                onClick={() => basculerBanniere(ban.id, ban.actif)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                  ban.actif
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {ban.actif ? "Active" : "Désactivée"}
-              </button>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Emplacement sur le site *
+                </label>
+                <select
+                  name="emplacement"
+                  defaultValue="accueil"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+                >
+                  <option value="accueil">Page d&apos;accueil</option>
+                  <option value="annuaire">Page Annuaire des artisans</option>
+                </select>
+              </div>
             </div>
-          ))}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Lien de destination (Site web ou WhatsApp) *
+                </label>
+                <input
+                  name="lien_url"
+                  type="url"
+                  required
+                  placeholder="https://wa.me"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Image de la bannière (format horizontal conseillé) *
+                </label>
+                <input
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  required
+                  className="w-full border border-gray-300 rounded-xl px-3 py-1.5 text-xs bg-gray-50"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={ajoutBanniereEnCours}
+              className="bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl disabled:opacity-50 transition"
+            >
+              {ajoutBanniereEnCours
+                ? "Envoi de l'image..."
+                : "Publier la bannière"}
+            </button>
+          </form>
+
+          <div className="space-y-3">
+            {bannieres.length === 0 ? (
+              <p className="text-gray-500 text-center py-8 text-sm">
+                Aucune bannière publicitaire enregistrée.
+              </p>
+            ) : (
+              bannieres.map((ban) => (
+                <div
+                  key={ban.id}
+                  className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ban.image_url}
+                      alt={ban.titre}
+                      className="w-24 h-14 object-cover rounded-lg border border-gray-200 shrink-0"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-gray-900">
+                          {ban.titre}
+                        </p>
+                        <span className="text-[11px] bg-orange-50 text-orange-700 font-semibold px-2 py-0.5 rounded-full uppercase">
+                          {ban.emplacement}
+                        </span>
+                      </div>
+                      <a
+                        href={ban.lien_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline break-all"
+                      >
+                        {ban.lien_url}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => basculerBanniere(ban.id, ban.actif)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        ban.actif
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {ban.actif ? "🟢 Active" : "⏸️ Désactivée"}
+                    </button>
+
+                    <button
+                      onClick={() => supprimerBanniere(ban.id, ban.titre)}
+                      className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
