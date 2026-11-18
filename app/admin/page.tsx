@@ -176,20 +176,13 @@ export default function AdminPage() {
       chiffres = chiffres.slice(2);
     }
 
-    if (chiffres.length < 8) {
-      return {
-        type: "whatsapp" as const,
-        url: "https://whatsapp.com",
-      };
-    }
-
     const texteWhatsApp = encodeURIComponent(
       `Bonjour ${nomPropre}, merci pour votre message sur BARA Abidjan.`
     );
 
     return {
       type: "whatsapp" as const,
-      url: `https://whatsapp.com?phone=${chiffres}&text=${texteWhatsApp}`,
+      url: `https://wa.me{chiffres}?text=${texteWhatsApp}`,
     };
   }
   if (loading || !autorise) {
@@ -285,12 +278,11 @@ export default function AdminPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(reponse.url, "_blank", "noopener,noreferrer")
-                      }
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <a
+                      href={reponse.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
                         reponse.type === "email"
                           ? "bg-blue-600 hover:bg-blue-700"
@@ -298,11 +290,12 @@ export default function AdminPage() {
                       }`}
                     >
                       {reponse.type === "email"
-                        ? "✉️ Répondre par e-mail"
+                        ? "✉️ Répondre sur Gmail"
                         : "💬 Répondre sur WhatsApp"}
-                    </button>
+                    </a>
 
                     <button
+                      type="button"
                       onClick={() => supprimerMessage(msg.id)}
                       className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition"
                     >
