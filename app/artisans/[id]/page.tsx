@@ -30,10 +30,11 @@ interface Avis {
   note: number;
   commentaire: string | null;
 }
+
 export default function FicheArtisanPage() {
   const params = useParams();
   const rawId = params?.id;
-  const idBrut = Array.isArray(rawId) ? rawId[0] : rawId || "";
+  const idBrut = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
   const id = decodeURIComponent(idBrut);
 
   const [artisan, setArtisan] = useState<Artisan | null>(null);
@@ -65,7 +66,6 @@ export default function FicheArtisanPage() {
       ]);
 
       if (resArtisan.error) {
-        console.error("Erreur Supabase artisan:", resArtisan.error);
         setErreurChargement(resArtisan.error.message);
       } else if (resArtisan.data) {
         setArtisan(resArtisan.data as Artisan);
@@ -124,6 +124,7 @@ export default function FicheArtisanPage() {
     );
     return "https://wa.me" + chiffres + "?text=" + texte;
   }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
@@ -167,11 +168,12 @@ export default function FicheArtisanPage() {
   const initiales = artisan.name
     ? artisan.name
         .split(" ")
-        .map((mot) => mot[0])
+        .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "A";
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <Link
@@ -258,6 +260,7 @@ export default function FicheArtisanPage() {
                 </a>
               </div>
             )}
+
             <BoutonRecommander
               artisanId={artisan.id}
               commune={artisan.commune}
@@ -286,7 +289,6 @@ export default function FicheArtisanPage() {
             </p>
           </div>
         )}
-
         {artisan.realisations && artisan.realisations.length > 0 && (
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
@@ -312,6 +314,7 @@ export default function FicheArtisanPage() {
           </div>
         )}
       </div>
+
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Avis des clients ({avis.length})

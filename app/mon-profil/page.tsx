@@ -9,16 +9,18 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { RealisationsUpload } from "@/components/RealisationsUpload";
 import { CarteVisiteArtisan } from "@/components/CarteVisiteArtisan";
 import { GenerateurDevisPDF } from "@/components/GenerateurDevisPDF";
+import { ParrainageArtisan } from "@/components/ParrainageArtisan";
 import { SupprimerCompteButton } from "@/components/SupprimerCompteButton";
 
 type Fiche = {
-  id: number;
+  id: string | number;
   name: string | null;
   metier: string | null;
   commune: string | null;
   quartier: string | null;
   disponible: boolean | null;
   verifie: boolean | null;
+  code_parrainage: string | null;
   description: string | null;
   telephone: string | null;
   avatar_url: string | null;
@@ -52,7 +54,7 @@ export default function MonProfilPage() {
       const { data: ligne, error: erreur } = await supabase
         .from("artisans")
         .select(
-          "id, name, metier, commune, quartier, disponible, verifie, description, telephone, avatar_url, realisations"
+          "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, avatar_url, realisations"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -85,7 +87,7 @@ export default function MonProfilPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     const nomInitial =
-      user?.user_metadata?.nom || user?.email?.split("@")[0] || "Artisan BARA";
+      user?.user_metadata?.nom || user?.email?.split("@") || "Artisan BARA";
 
     const { data: nouvelleFiche, error: insertError } = await supabase
       .from("artisans")
@@ -93,13 +95,13 @@ export default function MonProfilPage() {
         {
           user_id: userId,
           name: nomInitial,
-          metier: METIERS[0],
+          metier: METIERS,
           commune: "Cocody",
           disponible: true,
         },
       ])
       .select(
-        "id, name, metier, commune, quartier, disponible, verifie, description, telephone, avatar_url, realisations"
+        "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, avatar_url, realisations"
       )
       .single();
 
@@ -153,7 +155,6 @@ export default function MonProfilPage() {
       setSaving(false);
     }
   }
-
   if (chargement) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-gray-500">
@@ -188,6 +189,7 @@ export default function MonProfilPage() {
       </div>
     );
   }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
@@ -261,7 +263,6 @@ export default function MonProfilPage() {
             />
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
             <div>
@@ -299,6 +300,7 @@ export default function MonProfilPage() {
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
             />
           </div>
+
           <div>
             <label htmlFor="metier" className="block text-sm font-medium mb-1">
               Métier principal
@@ -306,7 +308,7 @@ export default function MonProfilPage() {
             <select
               id="metier"
               name="metier"
-              defaultValue={fiche.metier ?? METIERS[0]}
+              defaultValue={fiche.metier ?? METIERS}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
             >
               {METIERS.map((m) => (
@@ -355,7 +357,7 @@ export default function MonProfilPage() {
                 onChange={(e) => setQuartierSaisi(e.target.value)}
                 placeholder={
                   suggestionsQuartiers.length > 0
-                    ? "Ex: " + suggestionsQuartiers[0] + "..."
+                    ? "Ex: " + suggestionsQuartiers + "..."
                     : "Choisir ou saisir un quartier"
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
@@ -424,9 +426,8 @@ export default function MonProfilPage() {
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
         </form>
-
         <CarteVisiteArtisan
-          id={fiche.id}
+          id={Number(fiche.id) || 0}
           nom={fiche.name ?? "Artisan BARA"}
           metier={fiche.metier ?? "Artisan"}
           commune={fiche.commune}
@@ -441,6 +442,12 @@ export default function MonProfilPage() {
           commune={fiche.commune}
           telephone={fiche.telephone}
           verifie={fiche.verifie}
+        />
+
+        <ParrainageArtisan
+          artisanId={fiche.id}
+          nomArtisan={fiche.name ?? "Artisan BARA"}
+          codeParrainage={fiche.code_parrainage}
         />
 
         <SupprimerCompteButton />
