@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 
 interface CarteVisiteProps {
   id: number;
@@ -21,18 +22,39 @@ export function CarteVisiteArtisan({
   telephone,
   verifie,
 }: CarteVisiteProps) {
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [urlFiche, setUrlFiche] = useState<string>(
+    `https://vercel.app{id}`
+  );
   const [telechargementEnCours, setTelechargementEnCours] = useState(false);
-
-  const urlFichePublique = `https://vercel.app{id}`;
-  const urlQrCode = `https://qrserver.com{encodeURIComponent(
-    urlFichePublique
-  )}`;
 
   const localisation = [commune || "Abidjan", quartier]
     .filter(Boolean)
     .join(" • ");
 
+  useEffect(() => {
+    const origine =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://vercel.app";
+    const lienComplet = `${origine}/artisans/${id}`;
+    setUrlFiche(lienComplet);
+
+    QRCode.toDataURL(lienComplet, {
+      width: 300,
+      margin: 1,
+      color: {
+        dark: "#111827",
+        light: "#ffffff",
+      },
+    })
+      .then((dataUrl) => setQrDataUrl(dataUrl))
+      .catch((err) => console.error("Erreur génération QR:", err));
+  }, [id]);
+
   async function telechargerCartePNG() {
+    if (!qrDataUrl) return;
+
     try {
       setTelechargementEnCours(true);
 
@@ -42,19 +64,18 @@ export function CarteVisiteArtisan({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // 1. Fond blanc avec bordure élégante
+      // 1. Fond blanc
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Bande supérieure orange BARA
+      // 2. Bande supérieure orange BARA
       ctx.fillStyle = "#ea580c";
       ctx.fillRect(0, 0, canvas.width, 24);
 
-      // Encadré latéral droit gris très clair pour le QR Code
+      // 3. Zone latérale droite gris clair pour le QR Code
       ctx.fillStyle = "#f9fafb";
       ctx.fillRect(650, 24, 350, 536);
 
-      // Ligne de séparation verticale
       ctx.strokeStyle = "#e5e7eb";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -62,34 +83,34 @@ export function CarteVisiteArtisan({
       ctx.lineTo(650, 500);
       ctx.stroke();
 
-      // 2. Logo BARA Abidjan
+      // 4. Logo BARA Abidjan
       ctx.fillStyle = "#ea580c";
-      ctx.font = "bold 36px Arial, sans-serif";
+      ctx.font = "bold 38px Arial, sans-serif";
       ctx.fillText("BARA", 55, 95);
 
       ctx.fillStyle = "#9a3412";
       ctx.font = "bold 20px Arial, sans-serif";
-      ctx.fillText("ABIDJAN", 168, 93);
+      ctx.fillText("ABIDJAN", 172, 93);
 
-      // Badge Vérifié (si actif)
+      // 5. Badge Vérifié (si actif)
       if (verifie) {
         ctx.fillStyle = "#dcfce7";
-        ctx.fillRect(55, 120, 230, 36);
+        ctx.fillRect(55, 120, 235, 36);
         ctx.fillStyle = "#166534";
         ctx.font = "bold 18px Arial, sans-serif";
         ctx.fillText("✓ ARTISAN VÉRIFIÉ", 72, 144);
       }
 
-      // 3. Nom et métier de l'artisan
+      // 6. Nom et métier
       ctx.fillStyle = "#111827";
-      ctx.font = "bold 46px Arial, sans-serif";
-      ctx.fillText((nom || "Artisan BARA").slice(0, 24), 55, 225);
+      ctx.font = "bold 44px Arial, sans-serif";
+      ctx.fillText((nom || "Artisan BARA").slice(0, 23), 55, 225);
 
       ctx.fillStyle = "#ea580c";
-      ctx.font = "bold 30px Arial, sans-serif";
+      ctx.font = "bold 28px Arial, sans-serif";
       ctx.fillText((metier || "Professionnel").slice(0, 30), 55, 275);
 
-      // 4. Localisation et Téléphone
+      // 7. Commune et Téléphone
       ctx.fillStyle = "#374151";
       ctx.font = "24px Arial, sans-serif";
       ctx.fillText("📍 " + localisation, 55, 355);
@@ -100,18 +121,20 @@ export function CarteVisiteArtisan({
         ctx.fillText("📞 " + telephone, 55, 405);
       }
 
-      // Pied de carte
       ctx.fillStyle = "#6b7280";
       ctx.font = "18px Arial, sans-serif";
-      ctx.fillText("Scannez le QR Code pour voir mes photos et avis clients", 55, 495);
+      ctx.fillText(
+        "Scannez le QR Code pour voir mes réalisations et avis",
+        55,
+        495
+      );
 
-      // 5. Charger et dessiner le QR Code
+      // 8. Dessiner le QR Code local sur le canvas
       const imgQr = new Image();
-      imgQr.crossOrigin = "anonymous";
       await new Promise<void>((resolve, reject) => {
         imgQr.onload = () => resolve();
-        imgQr.onerror = () => reject(new Error("Erreur chargement QR Code"));
-        imgQr.src = urlQrCode;
+        imgQr.onerror = () => reject(new Error("Erreur image QR"));
+        imgQr.src = qrDataUrl;
       });
 
       ctx.drawImage(imgQr, 705, 115, 240, 240);
@@ -119,20 +142,22 @@ export function CarteVisiteArtisan({
       ctx.fillStyle = "#111827";
       ctx.font = "bold 20px Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("VOIR MA FICHE & AVIS", 825, 395);
+      ctx.fillText("SCANNER MA FICHE", 825, 395);
 
       ctx.fillStyle = "#6b7280";
-      ctx.font = "16px Arial, sans-serif";
+      ctx.font = "15px Arial, sans-serif";
       ctx.fillText("bara-six-beta.vercel.app", 825, 425);
 
-      // 6. Déclencher le téléchargement de l'image PNG
+      // 9. Télécharger l'image PNG
       const lien = document.createElement("a");
       lien.download = `carte-visite-bara-${id}.png`;
       lien.href = canvas.toDataURL("image/png");
+      document.body.appendChild(lien);
       lien.click();
+      document.body.removeChild(lien);
     } catch (err) {
-      console.error("Erreur génération carte:", err);
-      alert("Impossible de télécharger la carte. Faites une capture d'écran de l'aperçu.");
+      console.error("Erreur téléchargement carte:", err);
+      alert("Impossible de télécharger la carte sur ce navigateur.");
     } finally {
       setTelechargementEnCours(false);
     }
@@ -145,11 +170,12 @@ export function CarteVisiteArtisan({
           🪪 Ma carte de visite & QR Code
         </h2>
         <p className="text-xs text-gray-600 mt-0.5">
-          Partagez cette carte sur WhatsApp ou imprimez-la pour que vos clients scannent votre QR Code et vous laissent un avis 5 étoiles.
+          Téléchargez votre carte professionnelle ou partagez votre lien sur
+          WhatsApp pour récolter des avis clients.
         </p>
       </div>
 
-      {/* Aperçu visuel de la carte de visite */}
+      {/* Aperçu de la carte */}
       <div className="bg-white rounded-2xl border-2 border-orange-200 shadow-sm overflow-hidden">
         <div className="h-2 bg-orange-600 w-full" />
         <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -178,14 +204,20 @@ export function CarteVisiteArtisan({
             )}
           </div>
 
-          {/* QR Code */}
+          {/* QR Code local */}
           <div className="flex flex-col items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={urlQrCode}
-              alt="QR Code profil BARA"
-              className="w-28 h-28 rounded-lg"
-            />
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrDataUrl}
+                alt="QR Code profil BARA"
+                className="w-28 h-28 rounded-lg"
+              />
+            ) : (
+              <div className="w-28 h-28 flex items-center justify-center text-xs text-gray-400">
+                Génération...
+              </div>
+            )}
             <span className="text-[10px] font-semibold text-gray-500 mt-1.5">
               Scanner pour voir ma fiche
             </span>
@@ -198,19 +230,19 @@ export function CarteVisiteArtisan({
         <button
           type="button"
           onClick={telechargerCartePNG}
-          disabled={telechargementEnCours}
+          disabled={!qrDataUrl || telechargementEnCours}
           className="bg-gray-900 hover:bg-gray-800 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition disabled:opacity-50"
         >
           {telechargementEnCours
-            ? "Génération de l'image..."
-            : "⬇️ Télécharger ma carte (Image)"}
+            ? "Création de l'image..."
+            : "⬇️ Télécharger ma carte (PNG)"}
         </button>
 
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(urlFichePublique);
-            alert("Lien de votre fiche copié ! Collez-le sur WhatsApp.");
+            navigator.clipboard.writeText(urlFiche);
+            alert("Lien copié : " + urlFiche);
           }}
           className="border border-gray-300 hover:bg-gray-50 text-gray-800 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition"
         >
