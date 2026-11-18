@@ -1,207 +1,404 @@
-import { Suspense } from "react";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { createSupabaseClient } from "@/lib/supabase";
-import { genererLienWhatsApp } from "@/lib/whatsapp";
-import { SectionAvis } from "@/components/SectionAvis";
+"use client";
 
-export default function ArtisanPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  return (
-    <Suspense
-      fallback={<div className="container mx-auto px-4 py-8">Chargement…</div>}
-    >
-      <ArtisanContent params={params} />
-    </Suspense>
-  );
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
+
+interface Artisan {
+  id: number;
+  name: string;
+  metier: string;
+  commune: string | null;
+  quartier?: string | null;
+  telephone: string | null;
+  description: string | null;
+  avatar_url: string | null;
+  realisations: string[] | null;
+  verifie: boolean | null;
+  disponible: boolean | null;
+  derniere_activite?: string | null;
 }
 
-async function ArtisanContent({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+interface Avis {
+  id: number;
+  created_at: string;
+  auteur: string;
+  note: number;
+  commentaire: string | null;
+}
 
-  const supabase = createSupabaseClient();
+export default function FicheArtisanPage() {
+  const params = useParams();
+  const id = Number(params?.id);
 
-  const { data: artisan, error } = await supabase
-    .from("artisans")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const [artisan, setArtisan] = useState<Artisan | null>(null);
+  const [avis, setAvis] = useState<Avis[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (error) {
-    console.error("Erreur Supabase:", error);
+  const [auteur, setAuteur] = useState("");
+  const [note, setNote] = useState(5);
+  const [commentaire, setCommentaire] = useState("");
+  const [envoiAvis, setEnvoiAvis] = useState(false);
+  const [messageAvis, setMessageAvis] = useState("");
+
+  useEffect(() => {
+    async function chargerFiche() {
+      if (!id || Number.isNaN(id)) {
+        setLoading(false);
+        return;
+      }
+
+      const [resArtisan, resAvis] = await Promise.all([
+        supabase.from("artisans").select("*").eq("id", id).maybeSingle(),
+        supabase
+          .from("avis")
+          .select("*")
+          .eq("artisan_id", id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (resArtisan.data) setArtisan(resArtisan.data as Artisan);
+      if (resAvis.data) setAvis(resAvis.data as Avis[]);
+      setLoading(false);
+    }
+
+    chargerFiche();
+  }, [id]);
+  async function handleAjouterAvis(e: React.FormEvent) {
+    e.preventDefault();
+    if (!artisan || !auteur.trim()) return;
+
+    setEnvoiAvis(true);
+    setMessageAvis("");
+
+    const { data, error } = await supabase
+      .from("avis")
+      .insert([
+        {
+          artisan_id: artisan.id,
+          auteur: auteur.trim(),
+          note,
+          commentaire: commentaire.trim() || null,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      setMessageAvis("Erreur : " + error.message);
+    } else if (data) {
+      setAvis((prev) => [data as Avis, ...prev]);
+      setAuteur("");
+      setCommentaire("");
+      setNote(5);
+      setMessageAvis("Merci ! Votre avis a bien été publié.");
+    }
+
+    setEnvoiAvis(false);
   }
 
-  if (error || !artisan) {
-    notFound();
+  function genererLienWhatsApp(tel: string | null, nomArtisan: string) {
+    let chiffres = (tel || "").replace(/\D/g, "");
+    if (chiffres.length === 10 && chiffres.startsWith("0")) {
+      chiffres = "225" + chiffres;
+    } else if (chiffres.startsWith("00225")) {
+      chiffres = chiffres.slice(2);
+    }
+    const texte = encodeURIComponent(
+      "Bonjour " +
+        nomArtisan +
+        ", j'ai vu votre profil sur BARA Abidjan et j'aimerais vous contacter pour un travail."
+    );
+    return "https://wa.me" + chiffres + "?text=" + texte;
   }
 
-  const lienWhatsApp =
-    artisan.telephone && artisan.telephone.replace(/\D/g, "").length >= 8
-      ? genererLienWhatsApp(
-          artisan.telephone,
-          artisan.name,
-          artisan.metier || "Artisan",
-          artisan.commune
-        )
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
+        Chargement de la fiche artisan...
+      </div>
+    );
+  }
+
+  if (!artisan) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">
+          Artisan introuvable
+        </h1>
+        <Link
+          href="/artisans"
+          className="text-orange-600 font-semibold hover:underline"
+        >
+          ← Retour à l&apos;annuaire
+        </Link>
+      </div>
+    );
+  }
+
+  const estConnecte = artisan.derniere_activite
+    ? Date.now() - new Date(artisan.derniere_activite).getTime() < 15 * 60 * 1000
+    : false;
+
+  const moyenneNote =
+    avis.length > 0
+      ? (avis.reduce((acc, a) => acc + a.note, 0) / avis.length).toFixed(1)
       : null;
-
-  const photoProfil = artisan.avatar_url || artisan.photo_url;
 
   const initiales = artisan.name
     ? artisan.name
         .split(" ")
-        .map((n: string) => n[0])
+        .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "A";
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <Link
         href="/artisans"
-        className="text-sm text-orange-600 hover:underline font-medium"
+        className="inline-block text-sm font-medium text-gray-600 hover:text-orange-600"
       >
         ← Retour aux artisans
       </Link>
 
-      <div className="mt-4 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        {artisan.photo_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={artisan.photo_url}
-            alt={artisan.name}
-            className="w-full h-56 object-cover"
-          />
-        )}
+      {/* Carte principale de l'artisan */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          {artisan.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={artisan.avatar_url}
+              alt={artisan.name}
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-orange-100 shrink-0"
+            />
+          ) : (
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-3xl font-extrabold shrink-0">
+              {initiales}
+            </div>
+          )}
 
-        <div className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {photoProfil ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photoProfil}
-                  alt={artisan.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shrink-0"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xl font-bold border border-orange-200 shrink-0">
-                  {initiales}
-                </div>
+          <div className="flex-1 text-center sm:text-left">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+              {artisan.verifie && (
+                <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">
+                  ✓ Profil vérifié
+                </span>
               )}
 
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {artisan.name}
-                </h1>
-                {artisan.verifie && (
-                  <span className="mt-1 inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-0.5 rounded-full">
-                    ✓ Profil vérifié
-                  </span>
-                )}
-              </div>
+              {estConnecte && (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Connecté
+                </span>
+              )}
+
+              <span
+                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                  artisan.disponible !== false
+                    ? "bg-green-50 text-green-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                {artisan.disponible !== false
+                  ? "🟢 Disponible"
+                  : "🟠 Actuellement occupé"}
+              </span>
             </div>
-          </div>
 
-          {/* Badges Métier, Commune + Quartier et Disponibilité */}
-          <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
-            {artisan.metier && (
-              <span className="bg-orange-50 text-orange-700 font-medium px-3 py-1 rounded-full">
-                {artisan.metier}
-              </span>
-            )}
-            {artisan.commune && (
-              <span className="bg-gray-100 px-3 py-1 rounded-full">
-                📍 {artisan.commune}
-                {artisan.quartier ? ` (${artisan.quartier})` : ""}
-              </span>
-            )}
-            {artisan.disponible !== false ? (
-              <span className="bg-green-50 text-green-700 border border-green-200 font-medium px-3 py-1 rounded-full">
-                🟢 Disponible
-              </span>
-            ) : (
-              <span className="bg-amber-50 text-amber-700 border border-amber-200 font-medium px-3 py-1 rounded-full">
-                🟠 Occupé actuellement
-              </span>
-            )}
-          </div>
-
-          {artisan.note && (
-            <p className="mt-4 text-sm text-gray-600">
-              <span className="text-yellow-500 font-semibold">
-                ★ {artisan.note}
-              </span>{" "}
-              ({artisan.avis ?? 0} avis)
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+              {artisan.name}
+            </h1>
+            <p className="text-orange-600 font-bold text-base sm:text-lg mt-0.5">
+              {artisan.metier}
             </p>
-          )}
+            <p className="text-gray-600 text-sm mt-1">
+              📍 {artisan.commune || "Abidjan"}
+              {artisan.quartier ? ` (${artisan.quartier})` : ""}
+              {moyenneNote && (
+                <span className="ml-3 font-semibold text-gray-800">
+                  ★ {moyenneNote}/5 ({avis.length} avis)
+                </span>
+              )}
+            </p>
 
-          {artisan.description && (
-            <p className="mt-6 text-gray-700 leading-relaxed whitespace-pre-line">
+            {/* Boutons de contact direct */}
+            {artisan.telephone && (
+              <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
+                <a
+                  href={genererLienWhatsApp(artisan.telephone, artisan.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl text-sm transition"
+                >
+                  💬 Contacter sur WhatsApp
+                </a>
+                <a
+                  href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
+                  className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
+                >
+                  📞 Appeler ({artisan.telephone})
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bouton Partager la fiche à un proche (Sécurité visite à domicile) */}
+        <PartageSecuriteProche
+          id={artisan.id}
+          nom={artisan.name}
+          metier={artisan.metier}
+          commune={artisan.commune}
+          quartier={artisan.quartier}
+          telephone={artisan.telephone}
+          verifie={artisan.verifie}
+        />
+
+        {/* Présentation */}
+        {artisan.description && (
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">
+              À propos de cet artisan
+            </h2>
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
               {artisan.description}
             </p>
+          </div>
+        )}
+        {/* Galerie des réalisations */}
+        {artisan.realisations && artisan.realisations.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Photos de ses réalisations ({artisan.realisations.length})
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {artisan.realisations.map((photo, index) => (
+                <a
+                  key={photo + index}
+                  href={photo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo}
+                    alt={`Réalisation ${index + 1} de ${artisan.name}`}
+                    className="w-full h-40 object-cover rounded-2xl border border-gray-200 hover:opacity-90 transition"
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Section Avis Clients */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Avis des clients ({avis.length})
+        </h2>
+
+        <form
+          onSubmit={handleAjouterAvis}
+          className="bg-gray-50 rounded-2xl p-5 border border-gray-200 mb-8 space-y-4"
+        >
+          <h3 className="font-bold text-sm text-gray-900">
+            Laisser un avis sur {artisan.name}
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Votre nom *
+              </label>
+              <input
+                type="text"
+                required
+                value={auteur}
+                onChange={(e) => setAuteur(e.target.value)}
+                placeholder="Ex: Kouassi Jean"
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Note sur 5 *
+              </label>
+              <select
+                value={note}
+                onChange={(e) => setNote(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+              >
+                <option value={5}>★★★★★ (5/5 - Excellent)</option>
+                <option value={4}>★★★★☆ (4/5 - Très bien)</option>
+                <option value={3}>★★★☆☆ (3/5 - Correct)</option>
+                <option value={2}>★★☆☆☆ (2/5 - Moyen)</option>
+                <option value={1}>★☆☆☆☆ (1/5 - Décevant)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Votre commentaire (optionnel)
+            </label>
+            <textarea
+              rows={3}
+              value={commentaire}
+              onChange={(e) => setCommentaire(e.target.value)}
+              placeholder="Ponctualité, qualité du travail, tarif..."
+              className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+            />
+          </div>
+
+          {messageAvis && (
+            <p className="text-xs font-semibold text-green-700">{messageAvis}</p>
           )}
 
-          {/* Galerie des réalisations */}
-          {artisan.realisations && artisan.realisations.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">
-                Réalisations récentes
-              </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {artisan.realisations.map((photoUrl: string, index: number) => (
-                  <a
-                    key={photoUrl}
-                    href={photoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden rounded-xl border border-gray-200 hover:opacity-95 transition"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoUrl}
-                      alt={`Réalisation ${index + 1} de ${artisan.name}`}
-                      className="w-full h-40 object-cover"
-                    />
-                  </a>
-                ))}
+          <button
+            type="submit"
+            disabled={envoiAvis}
+            className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {envoiAvis ? "Publication..." : "Publier mon avis"}
+          </button>
+        </form>
+
+        {avis.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-6">
+            Aucun avis pour le moment. Soyez le premier à évaluer cet artisan !
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {avis.map((item) => (
+              <div
+                key={item.id}
+                className="border-b border-gray-100 pb-4 last:border-none"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-sm text-gray-900">
+                    {item.auteur}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(item.created_at).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+                <p className="text-yellow-500 text-xs mb-1">
+                  {"★".repeat(item.note)}
+                  {"☆".repeat(5 - item.note)}
+                </p>
+                {item.commentaire && (
+                  <p className="text-gray-700 text-sm">{item.commentaire}</p>
+                )}
               </div>
-            </div>
-          )}
-
-          {lienWhatsApp ? (
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <a
-                href={lienWhatsApp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition"
-              >
-                💬 Discuter sur WhatsApp
-              </a>
-              <a
-                href={`tel:${artisan.telephone.replace(/\s/g, "")}`}
-                className="flex-1 text-center border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-xl transition"
-              >
-                📞 Appeler ({artisan.telephone})
-              </a>
-            </div>
-          ) : (
-            <p className="mt-8 text-sm text-gray-500">
-              Cet artisan n&apos;a pas encore renseigné de numéro de téléphone.
-            </p>
-          )}
-
-          {/* Section Avis et Notation */}
-          <SectionAvis artisanId={artisan.id} />
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
