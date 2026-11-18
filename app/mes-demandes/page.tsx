@@ -18,6 +18,7 @@ interface Demande {
   telephone: string;
   budget: string | null;
   photos?: string[] | null;
+  audio_url?: string | null;
   statut: string;
 }
 
@@ -83,7 +84,6 @@ export default function MesDemandesPage() {
 
     chargerDonnees();
   }, [router]);
-
   async function cloturerDemande(id: number) {
     if (!userId) return;
 
@@ -115,6 +115,7 @@ export default function MesDemandesPage() {
 
     return "https://wa.me" + chiffres + "?text=" + encodeURIComponent(texte);
   }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center text-gray-500">
@@ -125,7 +126,7 @@ export default function MesDemandesPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-12">
-      {/* Section Artisan : Demandes de clients avec photos de panne */}
+      {/* Section Artisan : Demandes de clients */}
       {estArtisan && (
         <section>
           <div className="mb-6">
@@ -186,7 +187,21 @@ export default function MesDemandesPage() {
                       {demande.description}
                     </p>
 
-                    {/* Photos de la panne jointes par le client */}
+                    {/* Note vocale du client */}
+                    {demande.audio_url && (
+                      <div className="mb-4 bg-orange-50/60 border border-orange-200 p-3 rounded-xl">
+                        <p className="text-xs font-semibold text-orange-900 mb-1.5">
+                          🎙️ Note vocale du client :
+                        </p>
+                        <audio
+                          controls
+                          src={demande.audio_url}
+                          className="w-full h-9"
+                        />
+                      </div>
+                    )}
+
+                    {/* Photos de la panne */}
                     {demande.photos && demande.photos.length > 0 && (
                       <div className="flex flex-wrap gap-3 mb-5">
                         {demande.photos.map((photoUrl, idx) => (
@@ -231,7 +246,6 @@ export default function MesDemandesPage() {
           )}
         </section>
       )}
-
       {/* Section Particulier : Mes propres demandes envoyées */}
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -271,7 +285,7 @@ export default function MesDemandesPage() {
                 key={demande.id}
                 className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
               >
-                <div>
+                <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-bold text-gray-900">
                       {demande.metier} • {demande.commune}
@@ -291,6 +305,16 @@ export default function MesDemandesPage() {
                   <p className="text-gray-600 text-sm line-clamp-2 mt-1">
                     {demande.description}
                   </p>
+
+                  {demande.audio_url && (
+                    <div className="mt-3 max-w-md">
+                      <audio
+                        controls
+                        src={demande.audio_url}
+                        className="w-full h-8"
+                      />
+                    </div>
+                  )}
 
                   {demande.photos && demande.photos.length > 0 && (
                     <div className="flex gap-2 mt-3">

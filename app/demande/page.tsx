@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { compresserImage } from "@/lib/compressionImage";
+import { EnregistreurVocal } from "@/components/EnregistreurVocal";
 
 export default function DemandePage() {
   const [envoye, setEnvoye] = useState(false);
@@ -14,6 +15,7 @@ export default function DemandePage() {
   const [quartierSaisi, setQuartierSaisi] = useState("");
   const [fichiersPhotos, setFichiersPhotos] = useState<File[]>([]);
   const [apercusPhotos, setApercusPhotos] = useState<string[]>([]);
+  const [fichierAudio, setFichierAudio] = useState<File | null>(null);
 
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
@@ -35,7 +37,6 @@ export default function DemandePage() {
     setFichiersPhotos((prev) => prev.filter((_, i) => i !== index));
     setApercusPhotos((prev) => prev.filter((_, i) => i !== index));
   }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -57,7 +58,7 @@ export default function DemandePage() {
     const budgetSaisi = ((formData.get("budget") as string) || "").trim() || null;
     const quartierPropre = quartierSaisi.trim() || null;
 
-    // 1. Upload et compression des photos de panne (si jointes)
+    // 1. Upload et compression des photos de panne
     const urlsPhotos: string[] = [];
     try {
       for (const fichier of fichiersPhotos) {
@@ -94,6 +95,44 @@ export default function DemandePage() {
       return;
     }
 
+    // 2. Upload de la note vocale (si enregistrée)
+    let audioUrlPublic: string | null = null;
+    if (fichierAudio) {
+      try {
+        const ext = fichierAudio.name.split(".").pop() || "webm";
+        const cheminAudio =
+          "vocaux/note-" +
+          Date.now() +
+          "-" +
+          Math.random().toString(36).slice(2, 7) +
+          "." +
+          ext;
+
+        const { error: audioUploadError } = await supabase.storage
+          .from("avatars")
+          .upload(cheminAudio, fichierAudio, {
+            contentType: fichierAudio.type || "audio/webm",
+            upsert: false,
+          });
+
+        if (audioUploadError) throw audioUploadError;
+
+        const { data: audioData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(cheminAudio);
+
+        audioUrlPublic = audioData.publicUrl;
+      } catch (audioErr: any) {
+        console.error("Erreur upload note vocale:", audioErr);
+        setError(
+          "Impossible d'envoyer la note vocale : " +
+            (audioErr.message || "Réessayez.")
+        );
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user?.id ?? null;
 
@@ -109,6 +148,7 @@ export default function DemandePage() {
       telephone: telephoneSaisi,
       budget: budgetSaisi,
       photos: urlsPhotos,
+      audio_url: audioUrlPublic,
       statut: "ouverte",
     };
 
@@ -133,7 +173,9 @@ export default function DemandePage() {
             quartierPropre ? ` (${quartierPropre})` : ""
           }\nTéléphone client : ${telephoneSaisi}\nBudget : ${
             budgetSaisi || "Non précisé"
-          }\nPhotos jointes : ${urlsPhotos.length}\n\nDescription :\n${descriptionSaisie}`,
+          }\nPhotos jointes : ${urlsPhotos.length}\nNote vocale : ${
+            audioUrlPublic ? "Oui" : "Non"
+          }\n\nDescription :\n${descriptionSaisie}`,
         }),
       });
     } catch (mailError) {
@@ -175,7 +217,7 @@ export default function DemandePage() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold mb-2">Poster une demande</h1>
       <p className="text-gray-600 mb-8">
-        Décrivez votre besoin et ajoutez une photo pour obtenir un devis précis.
+        Décrivez votre besoin par écrit, note vocale ou photo pour obtenir un devis précis.
       </p>
 
       <form
@@ -226,7 +268,10 @@ export default function DemandePage() {
           />
         </div>
 
-        {/* Ajout de photos de la panne (facultatif, max 2) */}
+        {/* Enregistrement d'une note vocale */}
+        <EnregistreurVocal onAudioChange={setFichierAudio} />
+
+        {/* Ajout de photos de la panne */}
         <div className="p-4 rounded-xl border border-dashed border-orange-300 bg-orange-50/40">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -274,7 +319,7 @@ export default function DemandePage() {
           )}
         </div>
 
-        {/* Commune + Sous-quartier intelligent */}
+        {/* Commune + Sous-quartier */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="commune" className="block text-sm font-medium mb-2">
@@ -316,7 +361,7 @@ export default function DemandePage() {
               onChange={(e) => setQuartierSaisi(e.target.value)}
               placeholder={
                 suggestionsQuartiers.length > 0
-                  ? "Ex: " + suggestionsQuartiers[0] + "..."
+                  ? "Ex: " + suggestionsQuartiers + "..."
                   : "Choisir ou taper un quartier"
               }
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
