@@ -160,14 +160,19 @@ export default function AdminPage() {
       `Bonjour ${nomPropre},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
     );
 
-    if (valeur.includes("@")) {
+        if (valeur.includes("@")) {
       return {
         type: "email" as const,
-        url: `https://google.com{encodeURIComponent(
-          valeur
-        )}&su=${sujet}&body=${corpsMail}`,
+        url:
+          "https://google.com" +
+          encodeURIComponent(valeur) +
+          "&su=" +
+          sujet +
+          "&body=" +
+          corpsMail,
       };
     }
+
 
     let chiffres = valeur.replace(/\D/g, "");
     if (chiffres.length === 10 && chiffres.startsWith("0")) {
@@ -180,10 +185,11 @@ export default function AdminPage() {
       `Bonjour ${nomPropre}, merci pour votre message sur BARA Abidjan.`
     );
 
-    return {
+        return {
       type: "whatsapp" as const,
-      url: `https://wa.me{chiffres}?text=${texteWhatsApp}`,
+      url: "https://wa.me" + chiffres + "?text=" + texteWhatsApp,
     };
+
   }
   if (loading || !autorise) {
     return (
