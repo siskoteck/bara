@@ -48,7 +48,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [onglet, setOnglet] = useState<
     "artisans" | "avis" | "messages" | "bannieres"
-  >("messages");
+  >("artisans");
+  const [filtreBadge, setFiltreBadge] = useState<
+    "tous" | "en_attente" | "verifies"
+  >("tous");
 
   const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
   const [avis, setAvis] = useState<AvisAdmin[]>([]);
@@ -97,7 +100,6 @@ export default function AdminPage() {
 
     verifierEtCharger();
   }, [router]);
-
   async function basculerVerification(id: number, etatActuel: boolean | null) {
     const nouvelEtat = !etatActuel;
     const { error } = await supabase
@@ -105,11 +107,14 @@ export default function AdminPage() {
       .update({ verifie: nouvelEtat })
       .eq("id", id);
 
-    if (!error) {
-      setArtisans((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, verifie: nouvelEtat } : a))
-      );
+    if (error) {
+      alert("Erreur lors de la mise à jour du badge : " + error.message);
+      return;
     }
+
+    setArtisans((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, verifie: nouvelEtat } : a))
+    );
   }
 
   async function supprimerArtisan(id: number, nom: string) {
@@ -157,10 +162,12 @@ export default function AdminPage() {
     const nomPropre = (nom || "Client").trim();
     const sujet = encodeURIComponent("Réponse de l'équipe BARA Abidjan");
     const corpsMail = encodeURIComponent(
-      `Bonjour ${nomPropre},\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan`
+      "Bonjour " +
+        nomPropre +
+        ",\n\nMerci pour votre message sur BARA.\n\nCordialement,\nL'équipe BARA Abidjan"
     );
 
-        if (valeur.includes("@")) {
+    if (valeur.includes("@")) {
       return {
         type: "email" as const,
         url:
@@ -173,24 +180,23 @@ export default function AdminPage() {
       };
     }
 
-
     let chiffres = valeur.replace(/\D/g, "");
     if (chiffres.length === 10 && chiffres.startsWith("0")) {
-      chiffres = `225${chiffres}`;
+      chiffres = "225" + chiffres;
     } else if (chiffres.startsWith("00225")) {
       chiffres = chiffres.slice(2);
     }
 
     const texteWhatsApp = encodeURIComponent(
-      `Bonjour ${nomPropre}, merci pour votre message sur BARA Abidjan.`
+      "Bonjour " + nomPropre + ", merci pour votre message sur BARA Abidjan."
     );
 
-        return {
+    return {
       type: "whatsapp" as const,
       url: "https://wa.me" + chiffres + "?text=" + texteWhatsApp,
     };
-
   }
+
   if (loading || !autorise) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center text-gray-500">
@@ -198,6 +204,12 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const artisansFiltres = artisans.filter((art) => {
+    if (filtreBadge === "verifies") return !!art.verifie;
+    if (filtreBadge === "en_attente") return !art.verifie;
+    return true;
+  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -213,16 +225,6 @@ export default function AdminPage() {
       {/* Onglets de navigation */}
       <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-4">
         <button
-          onClick={() => setOnglet("messages")}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-            onglet === "messages"
-              ? "bg-orange-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          📩 Messages ({messages.length})
-        </button>
-        <button
           onClick={() => setOnglet("artisans")}
           className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
             onglet === "artisans"
@@ -231,6 +233,16 @@ export default function AdminPage() {
           }`}
         >
           🛠️ Artisans ({artisans.length})
+        </button>
+        <button
+          onClick={() => setOnglet("messages")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            onglet === "messages"
+              ? "bg-orange-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          📩 Messages ({messages.length})
         </button>
         <button
           onClick={() => setOnglet("avis")}
@@ -253,8 +265,108 @@ export default function AdminPage() {
           📢 Bannières ({bannieres.length})
         </button>
       </div>
+      {/* Onglet 1 : Artisans et gestion des badges */}
+      {onglet === "artisans" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFiltreBadge("tous")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  filtreBadge === "tous"
+                    ? "bg-gray-900 text-white"
+                    : "bg-white border border-gray-300 text-gray-700"
+                }`}
+              >
+                Tous ({artisans.length})
+              </button>
+              <button
+                onClick={() => setFiltreBadge("en_attente")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  filtreBadge === "en_attente"
+                    ? "bg-amber-600 text-white"
+                    : "bg-white border border-gray-300 text-gray-700"
+                }`}
+              >
+                ⏳ À vérifier ({artisans.filter((a) => !a.verifie).length})
+              </button>
+              <button
+                onClick={() => setFiltreBadge("verifies")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  filtreBadge === "verifies"
+                    ? "bg-green-600 text-white"
+                    : "bg-white border border-gray-300 text-gray-700"
+                }`}
+              >
+                ✓ Vérifiés ({artisans.filter((a) => a.verifie).length})
+              </button>
+            </div>
 
-      {/* Onglet 1 : Messages de contact avec réponse directe */}
+            <p className="text-xs text-gray-500">
+              Contrôlez la fiche avant d&apos;accorder le badge ✓ Vérifié.
+            </p>
+          </div>
+
+          {artisansFiltres.map((art) => (
+            <div
+              key={art.id}
+              className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            >
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-bold text-gray-900">{art.name}</h2>
+                  {art.verifie ? (
+                    <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                      ✓ Profil vérifié
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                      ⏳ En attente
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-600 mt-1">
+                  {art.metier} • 📍 {art.commune || "Abidjan"}
+                  {art.quartier ? ` (${art.quartier})` : ""} •{" "}
+                  {art.telephone || "Sans numéro"}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={"/artisans/" + art.id}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50"
+                >
+                  👁️ Voir fiche
+                </a>
+
+                <button
+                  onClick={() => basculerVerification(art.id, art.verifie)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    art.verifie
+                      ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
+                >
+                  {art.verifie ? "Retirer le badge" : "✓ Valider le badge"}
+                </button>
+
+                <button
+                  onClick={() => supprimerArtisan(art.id, art.name)}
+                  className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Onglet 2 : Messages de contact */}
       {onglet === "messages" && (
         <div className="space-y-4">
           {messages.length === 0 ? (
@@ -312,45 +424,6 @@ export default function AdminPage() {
               );
             })
           )}
-        </div>
-      )}
-
-      {/* Onglet 2 : Artisans */}
-      {onglet === "artisans" && (
-        <div className="space-y-3">
-          {artisans.map((art) => (
-            <div
-              key={art.id}
-              className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div>
-                <h2 className="font-bold text-gray-900">{art.name}</h2>
-                <p className="text-xs text-gray-600">
-                  {art.metier} • 📍 {art.commune || "Abidjan"}
-                  {art.quartier ? ` (${art.quartier})` : ""} •{" "}
-                  {art.telephone || "Sans numéro"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => basculerVerification(art.id, art.verifie)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                    art.verifie
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {art.verifie ? "✓ Vérifié" : "Valider le badge"}
-                </button>
-                <button
-                  onClick={() => supprimerArtisan(art.id, art.name)}
-                  className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 

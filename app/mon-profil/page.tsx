@@ -16,6 +16,7 @@ type Fiche = {
   commune: string | null;
   quartier: string | null;
   disponible: boolean | null;
+  verifie: boolean | null;
   description: string | null;
   telephone: string | null;
   avatar_url: string | null;
@@ -49,7 +50,7 @@ export default function MonProfilPage() {
       const { data: ligne, error: erreur } = await supabase
         .from("artisans")
         .select(
-          "id, name, metier, commune, quartier, disponible, description, telephone, avatar_url, realisations"
+          "id, name, metier, commune, quartier, disponible, verifie, description, telephone, avatar_url, realisations"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -74,7 +75,6 @@ export default function MonProfilPage() {
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
     : [];
-
   async function creerMaFicheArtisan() {
     if (!userId) return;
     setSaving(true);
@@ -83,7 +83,7 @@ export default function MonProfilPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     const nomInitial =
-      user?.user_metadata?.nom || user?.email?.split("@")[0] || "Artisan BARA";
+      user?.user_metadata?.nom || user?.email?.split("@") || "Artisan BARA";
 
     const { data: nouvelleFiche, error: insertError } = await supabase
       .from("artisans")
@@ -91,13 +91,13 @@ export default function MonProfilPage() {
         {
           user_id: userId,
           name: nomInitial,
-          metier: METIERS[0],
+          metier: METIERS,
           commune: "Cocody",
           disponible: true,
         },
       ])
       .select(
-        "id, name, metier, commune, quartier, disponible, description, telephone, avatar_url, realisations"
+        "id, name, metier, commune, quartier, disponible, verifie, description, telephone, avatar_url, realisations"
       )
       .single();
 
@@ -151,6 +151,7 @@ export default function MonProfilPage() {
       setSaving(false);
     }
   }
+
   if (chargement) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-gray-500">
@@ -185,7 +186,6 @@ export default function MonProfilPage() {
       </div>
     );
   }
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
@@ -200,6 +200,40 @@ export default function MonProfilPage() {
           Complétez votre fiche : c&apos;est ce que voient les clients avant de vous
           contacter sur WhatsApp.
         </p>
+
+        {/* Statut du badge Vérifié */}
+        {fiche.verifie ? (
+          <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3">
+            <span className="text-xl">✅</span>
+            <div>
+              <p className="text-sm font-bold text-green-900">
+                Profil vérifié par l&apos;équipe BARA
+              </p>
+              <p className="text-xs text-green-700">
+                Votre badge ✓ Vérifié rassure les clients et vous place en tête des résultats.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-amber-900">
+                Obtenir le badge « ✓ Vérifié »
+              </p>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Envoyez-nous une photo de votre pièce d&apos;identité ou carte professionnelle sur WhatsApp pour activer votre badge de confiance.
+              </p>
+            </div>
+            <a
+              href="https://wa.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl text-center shrink-0 transition"
+            >
+              💬 Demander le badge
+            </a>
+          </div>
+        )}
 
         {userId && (
           <div className="space-y-4 mb-6">
@@ -271,7 +305,7 @@ export default function MonProfilPage() {
             <select
               id="metier"
               name="metier"
-              defaultValue={fiche.metier ?? METIERS[0]}
+              defaultValue={fiche.metier ?? METIERS}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
             >
               {METIERS.map((m) => (
@@ -320,7 +354,7 @@ export default function MonProfilPage() {
                 onChange={(e) => setQuartierSaisi(e.target.value)}
                 placeholder={
                   suggestionsQuartiers.length > 0
-                    ? `Ex: ${suggestionsQuartiers[0]}...`
+                    ? "Ex: " + suggestionsQuartiers + "..."
                     : "Choisir ou saisir un quartier"
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
@@ -373,7 +407,7 @@ export default function MonProfilPage() {
             <div className="text-green-700 text-sm bg-green-50 p-3 rounded-lg">
               Votre fiche a été mise à jour.{" "}
               <Link
-                href={`/artisans/${fiche.id}`}
+                href={"/artisans/" + fiche.id}
                 className="font-medium underline"
               >
                 Voir ma fiche publique
