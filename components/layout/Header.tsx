@@ -15,7 +15,6 @@ export function Header() {
               Abidjan
             </span>
           </Link>
-
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
@@ -23,6 +22,12 @@ export function Header() {
               className="text-gray-700 hover:text-orange-600 font-medium transition"
             >
               Trouver un artisan
+            </Link>
+            <Link
+              href="/tarifs"
+              className="text-gray-700 hover:text-orange-600 font-medium transition"
+            >
+              Tarifs
             </Link>
             <Link
               href="/demande"
@@ -41,14 +46,16 @@ export function Header() {
           {/* Boutons de connexion / compte */}
           <AuthButtons />
         </div>
-
         {/* Navigation Mobile */}
         <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs font-medium text-gray-700">
           <Link href="/artisans" className="hover:text-orange-600 py-1">
             🔍 Artisans
           </Link>
+          <Link href="/tarifs" className="hover:text-orange-600 py-1">
+            💰 Tarifs
+          </Link>
           <Link href="/demande" className="text-orange-600 font-semibold py-1">
-            ➕ Poster un besoin
+            ➕ Besoin
           </Link>
           <Link href="/comment-ca-marche" className="hover:text-orange-600 py-1">
             ℹ️ Aide
