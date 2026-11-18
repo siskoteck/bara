@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface PartageSecuriteProps {
-  id: number;
+  id: string | number;
   nom: string;
   metier: string;
   commune: string | null;
@@ -11,6 +11,7 @@ interface PartageSecuriteProps {
   telephone: string | null;
   verifie?: boolean | null;
 }
+
 
 export function PartageSecuriteProche({
   id,
