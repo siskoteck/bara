@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { compresserImage } from "@/lib/compressionImage";
 
 interface RealisationsUploadProps {
   userId: string;
@@ -9,109 +10,120 @@ interface RealisationsUploadProps {
   onChange: (nouvellesPhotos: string[]) => void;
 }
 
+const MAX_PHOTOS = 6;
+
 export function RealisationsUpload({
   userId,
   photosActuelles,
   onChange,
 }: RealisationsUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [erreur, setErreur] = useState("");
 
-  async function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAjouterPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichiers = Array.from(e.target.files || []);
+    if (fichiers.length === 0) return;
+
+    setErreur("");
+
+    const placesRestantes = MAX_PHOTOS - photosActuelles.length;
+    if (placesRestantes <= 0) {
+      setErreur(`Vous avez atteint la limite de ${MAX_PHOTOS} photos.`);
+      return;
+    }
+
+    const aTraiter = fichiers.slice(0, placesRestantes);
+
     try {
       setUploading(true);
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const nouvellesUrls: string[] = [];
 
-      if (photosActuelles.length >= 4) {
-        alert("Vous pouvez ajouter au maximum 4 photos de réalisations.");
-        return;
+      for (const file of aTraiter) {
+        if (!file.type.startsWith("image/")) continue;
+
+        if (file.size > 15 * 1024 * 1024) {
+          setErreur(
+            `La photo "${file.name}" dépasse 15 Mo et a été ignorée.`
+          );
+          continue;
+        }
+
+        // Compression automatique à 1200px max
+        const fichierOpti = await compresserImage(file, 1200, 0.8);
+        const chemin = `${userId}/realisation-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 7)}.jpg`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(chemin, fichierOpti, {
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(chemin);
+
+        nouvellesUrls.push(urlData.publicUrl);
       }
 
-      if (!file.type.startsWith("image/")) {
-        alert("Veuillez sélectionner une image valide (JPG, PNG ou WebP).");
-        return;
+      if (nouvellesUrls.length > 0) {
+        const listeFinale = [...photosActuelles, ...nouvellesUrls];
+
+        const { error: updateError } = await supabase
+          .from("artisans")
+          .update({ realisations: listeFinale })
+          .eq("user_id", userId);
+
+        if (updateError) throw updateError;
+
+        onChange(listeFinale);
       }
-
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Chaque photo ne doit pas dépasser 2 Mo.");
-        return;
-      }
-
-      const ext = file.name.split(".").pop() || "jpg";
-      const fileName = `${Date.now()}.${ext}`;
-      const filePath = `${userId}/${fileName}`;
-
-      // 1. Envoyer la photo dans Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from("realisations")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // 2. Récupérer l'URL publique
-      const { data } = supabase.storage
-        .from("realisations")
-        .getPublicUrl(filePath);
-
-      const miseAJourPhotos = [...photosActuelles, data.publicUrl];
-
-      // 3. Enregistrer la liste mise à jour dans la table artisans
-      const { error: dbError } = await supabase
-        .from("artisans")
-        .update({ realisations: miseAJourPhotos })
-        .eq("user_id", userId);
-
-      if (dbError) throw dbError;
-
-      onChange(miseAJourPhotos);
-    } catch (error: any) {
-      console.error("Erreur upload réalisation:", error);
-      alert("Erreur lors de l'envoi : " + (error.message || "Inconnue"));
+    } catch (err: any) {
+      console.error("Erreur upload réalisations:", err);
+      setErreur(err.message || "Erreur lors de l'envoi des photos.");
     } finally {
       setUploading(false);
       e.target.value = "";
     }
   }
 
-  async function handleRemovePhoto(urlASupprimer: string) {
-    try {
-      const miseAJourPhotos = photosActuelles.filter(
-        (url) => url !== urlASupprimer
-      );
+  async function handleSupprimerPhoto(urlASupprimer: string) {
+    const listeMiseAJour = photosActuelles.filter((u) => u !== urlASupprimer);
 
-      const { error: dbError } = await supabase
-        .from("artisans")
-        .update({ realisations: miseAJourPhotos })
-        .eq("user_id", userId);
+    const { error } = await supabase
+      .from("artisans")
+      .update({ realisations: listeMiseAJour })
+      .eq("user_id", userId);
 
-      if (dbError) throw dbError;
-
-      onChange(miseAJourPhotos);
-    } catch (error: any) {
-      console.error("Erreur suppression photo:", error);
-      alert("Impossible de supprimer la photo.");
+    if (!error) {
+      onChange(listeMiseAJour);
     }
   }
 
   return (
-    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <p className="text-sm font-semibold text-gray-900">
-            Photos de mes réalisations ({photosActuelles.length}/4)
+          <p className="font-semibold text-sm text-gray-900">
+            Photos de mes réalisations ({photosActuelles.length}/{MAX_PHOTOS})
           </p>
           <p className="text-xs text-gray-500">
-            Montrez vos meilleurs chantiers aux clients (max 2 Mo par photo).
+            Montrez vos chantiers terminés (jusqu&apos;à 15 Mo par photo).
           </p>
         </div>
 
-        {photosActuelles.length < 4 && (
-          <label className="cursor-pointer bg-white hover:bg-orange-50 text-orange-600 border border-orange-300 text-xs font-semibold px-3 py-2 rounded-lg transition shrink-0">
-            {uploading ? "Envoi..." : "+ Ajouter une photo"}
+        {photosActuelles.length < MAX_PHOTOS && (
+          <label className="cursor-pointer bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+            {uploading ? "Compression et envoi..." : "+ Ajouter des photos"}
             <input
               type="file"
               accept="image/*"
-              onChange={handleAddPhoto}
+              multiple
+              onChange={handleAjouterPhotos}
               disabled={uploading}
               className="hidden"
             />
@@ -119,23 +131,25 @@ export function RealisationsUpload({
         )}
       </div>
 
+      {erreur && <p className="text-red-600 text-xs mb-3">{erreur}</p>}
+
       {photosActuelles.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-3">
           {photosActuelles.map((url, index) => (
-            <div key={url} className="relative group">
+            <div key={url + index} className="relative group aspect-square">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={url}
                 alt={`Réalisation ${index + 1}`}
-                className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                className="w-full h-full object-cover rounded-lg border border-gray-200"
               />
               <button
                 type="button"
-                onClick={() => handleRemovePhoto(url)}
-                className="absolute top-1 right-1 bg-red-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center shadow hover:bg-red-700"
+                onClick={() => handleSupprimerPhoto(url)}
                 title="Supprimer cette photo"
+                className="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center opacity-90 hover:opacity-100"
               >
-                ✕
+                ×
               </button>
             </div>
           ))}
