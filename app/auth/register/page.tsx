@@ -1,191 +1,193 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import { telephoneVersEmail } from "@/lib/auth";
-import { METIERS, COMMUNES } from "@/lib/constantes";
-import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
+import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 
-export default function RegisterPage() {
+function FormulaireInscription() {
   const router = useRouter();
-  const [typeCompte, setTypeCompte] = useState<"particulier" | "artisan">("particulier");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [resetSignal, setResetSignal] = useState(0);
+  const searchParams = useSearchParams();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const [typeCompte, setTypeCompte] = useState<"client" | "artisan">(
+    searchParams.get("parrain") ? "artisan" : "client"
+  );
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [metier, setMetier] = useState<string>(METIERS[0] || "Plombier");
+  const [commune, setCommune] = useState("Cocody");
+  const [quartier, setQuartier] = useState("");
+  const [codeParrain, setCodeParrain] = useState(
+    (searchParams.get("parrain") || "").toUpperCase()
+  );
+
+  const [loading, setLoading] = useState(false);
+  const [erreur, setErreur] = useState("");
+
+  const suggestionsQuartiers = commune
+    ? QUARTIERS_PAR_COMMUNE[commune] || []
+    : [];
+
+  async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setErreur("");
 
     const formData = new FormData(e.currentTarget);
-    const nom = (formData.get("nom") as string).trim();
-    const telephone = (formData.get("telephone") as string).trim();
-    const emailSaisi = ((formData.get("email") as string) || "").trim().toLowerCase();
-    const password = formData.get("password") as string;
-    const metier = formData.get("metier") as string;
-    const commune = formData.get("commune") as string;
+    if (formData.get("site_web")) {
+      router.push("/");
+      return;
+    }
 
-    // E-mail réel si fourni, sinon e-mail fictif basé sur le téléphone
-    const email = emailSaisi || telephoneVersEmail(telephone);
+    setLoading(true);
 
     try {
-      // 1. Créer le compte
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
         options: {
-          captchaToken: captchaToken ?? undefined,
           data: {
-            nom,
-            telephone,
-            email_contact: emailSaisi || null,
+            nom: nom.trim(),
             type_compte: typeCompte,
-            metier: typeCompte === "artisan" ? metier : null,
-            commune: typeCompte === "artisan" ? commune : null,
           },
         },
       });
 
-      if (signUpError) {
-        throw signUpError;
+      if (signUpError) throw signUpError;
+
+      const user = authData.user;
+      if (user && typeCompte === "artisan") {
+        const { error: ficheError } = await supabase.from("artisans").insert([
+          {
+            user_id: user.id,
+            name: nom.trim(),
+            metier,
+            commune,
+            quartier: quartier.trim() || null,
+            telephone: telephone.trim(),
+            disponible: true,
+            parrain_code: codeParrain.trim().toUpperCase() || null,
+          },
+        ]);
+
+        if (ficheError) {
+          console.error("Erreur création fiche artisan:", ficheError);
+        }
       }
 
-      // 2. Redirection après succès
-      alert("Compte créé avec succès !");
-      router.push("/auth/login");
-    } catch (err: any) {
-      console.error("Erreur Supabase:", err);
-      const msg: string = err.message || "";
-      if (msg.toLowerCase().includes("captcha")) {
-        setError("Vérification de sécurité échouée. Réessayez.");
+      if (typeCompte === "artisan") {
+        router.push("/mon-profil");
       } else {
-        setError(msg || "Une erreur est survenue");
+        router.push("/");
       }
+      router.refresh();
+    } catch (err: any) {
+      setErreur(err.message || "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
-      // Un jeton ne sert qu'une fois : on en redemande un nouveau
-      setResetSignal((n) => n + 1);
     }
   }
-
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8">
-        <h1 className="text-2xl font-bold text-center mb-2">Créer un compte</h1>
-        <p className="text-gray-600 text-center mb-8">
-          Rejoignez BARA en quelques secondes
-        </p>
+    <div className="max-w-lg mx-auto px-4 py-12">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Créer un compte BARA
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Rejoignez la plateforme des artisans de confiance à Abidjan.
+          </p>
+        </div>
 
-        {/* Choix du type de compte */}
-        <div className="flex gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl mb-6">
           <button
             type="button"
-            onClick={() => setTypeCompte("particulier")}
-            className={`flex-1 py-2.5 rounded-lg font-medium border ${
-              typeCompte === "particulier"
-                ? "bg-orange-600 text-white border-orange-600"
-                : "bg-white text-gray-700 border-gray-300"
+            onClick={() => setTypeCompte("client")}
+            className={`py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition ${
+              typeCompte === "client"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Particulier
+            👤 Je cherche un artisan
           </button>
           <button
             type="button"
             onClick={() => setTypeCompte("artisan")}
-            className={`flex-1 py-2.5 rounded-lg font-medium border ${
+            className={`py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition ${
               typeCompte === "artisan"
-                ? "bg-orange-600 text-white border-orange-600"
-                : "bg-white text-gray-700 border-gray-300"
+                ? "bg-orange-600 text-white shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Artisan
+            🛠️ Je suis artisan
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-4">
+          <input
+            type="text"
+            name="site_web"
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+          />
+
           <div>
-            <label htmlFor="nom" className="block text-sm font-medium mb-1">
-              Nom complet
+            <label className="block text-sm font-medium mb-1">
+              Nom complet *
             </label>
             <input
-              id="nom"
-              name="nom"
               type="text"
-              autoComplete="name"
               required
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Ex: Kouadio Yao"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              placeholder="Votre nom"
             />
           </div>
 
           <div>
-            <label htmlFor="telephone" className="block text-sm font-medium mb-1">
-              Téléphone
+            <label className="block text-sm font-medium mb-1">
+              Adresse e-mail *
             </label>
             <input
-              id="telephone"
-              name="telephone"
-              type="tel"
-              autoComplete="tel"
-              required
-              pattern="[0-9 +]{8,16}"
-              title="Entrez un numéro valide, par exemple 07 00 00 00 00"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              placeholder="07 00 00 00 00"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              E-mail{" "}
-              <span className="text-gray-400 font-normal">(facultatif)</span>
-            </label>
-            <input
-              id="email"
-              name="email"
               type="email"
-              autoComplete="email"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="vous@exemple.com"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Mot de passe
+            <label className="block text-sm font-medium mb-1">
+              Mot de passe *
             </label>
             <input
-              id="password"
-              name="password"
               type="password"
-              autoComplete="new-password"
               required
-              minLength={8}
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="6 caractères minimum"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-              placeholder="8 caractères minimum"
             />
           </div>
-
           {typeCompte === "artisan" && (
-            <>
+            <div className="space-y-4 pt-3 border-t border-gray-100">
               <div>
-                <label htmlFor="metier" className="block text-sm font-medium mb-1">
-                  Métier principal
+                <label className="block text-sm font-medium mb-1">
+                  Métier principal *
                 </label>
                 <select
-                  id="metier"
-                  name="metier"
-                  required
-                  defaultValue=""
+                  value={metier}
+                  onChange={(e) => setMetier(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
                 >
-                  <option value="" disabled>
-                    Choisir un métier
-                  </option>
                   {METIERS.map((m) => (
                     <option key={m} value={m}>
                       {m}
@@ -194,54 +196,118 @@ export default function RegisterPage() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="commune" className="block text-sm font-medium mb-1">
-                  Commune d'intervention
-                </label>
-                <select
-                  id="commune"
-                  name="commune"
-                  required
-                  defaultValue=""
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
-                >
-                  <option value="" disabled>
-                    Choisir une commune
-                  </option>
-                  {COMMUNES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Commune *
+                  </label>
+                  <select
+                    value={commune}
+                    onChange={(e) => {
+                      setCommune(e.target.value);
+                      setQuartier("");
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
+                  >
+                    {COMMUNES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Sous-quartier
+                  </label>
+                  <input
+                    type="text"
+                    list="liste-quartiers-register"
+                    value={quartier}
+                    onChange={(e) => setQuartier(e.target.value)}
+                    placeholder="Ex: Angré, Zone 4..."
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                  />
+                  <datalist id="liste-quartiers-register">
+                    {suggestionsQuartiers.map((q) => (
+                      <option key={q} value={q} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
-            </>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Numéro WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  placeholder="07 00 00 00 00"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Code parrain{" "}
+                  <span className="text-gray-400 font-normal">(facultatif)</span>
+                </label>
+                <input
+                  type="text"
+                  value={codeParrain}
+                  onChange={(e) =>
+                    setCodeParrain(e.target.value.toUpperCase())
+                  }
+                  placeholder="Ex: BARA-8F3A1C"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 uppercase"
+                />
+              </div>
+            </div>
           )}
 
-          <Captcha onToken={setCaptchaToken} resetSignal={resetSignal} />
-
-          {error && (
+          {erreur && (
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-              {error}
+              {erreur}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading || (CAPTCHA_ACTIF && !captchaToken)}
-            className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 mt-2 disabled:opacity-50"
+            disabled={loading}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-semibold disabled:opacity-50 transition"
           >
             {loading ? "Création en cours..." : "Créer mon compte"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          Déjà un compte ?{" "}
-          <Link href="/auth/login" className="text-orange-600 font-medium hover:underline">
+          Déjà inscrit ?{" "}
+          <Link
+            href="/auth/login"
+            className="text-orange-600 font-semibold hover:underline"
+          >
             Se connecter
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-lg mx-auto px-4 py-12 text-center text-gray-500">
+          Chargement du formulaire...
+        </div>
+      }
+    >
+      <FormulaireInscription />
+    </Suspense>
   );
 }
