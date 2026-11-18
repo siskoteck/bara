@@ -17,6 +17,7 @@ interface Demande {
   description: string;
   telephone: string;
   budget: string | null;
+  photos?: string[] | null;
   statut: string;
 }
 
@@ -102,7 +103,7 @@ export default function MesDemandesPage() {
   function genererLienWhatsAppClient(demande: Demande) {
     let chiffres = (demande.telephone || "").replace(/\D/g, "");
     if (chiffres.length === 10 && chiffres.startsWith("0")) {
-      chiffres = `225${chiffres}`;
+      chiffres = "225" + chiffres;
     } else if (chiffres.startsWith("00225")) {
       chiffres = chiffres.slice(2);
     }
@@ -112,7 +113,7 @@ export default function MesDemandesPage() {
       : demande.commune;
     const texte = `Bonjour, je suis artisan (${demande.metier}) sur BARA. J'ai vu votre demande à ${lieu} et je suis disponible pour intervenir.`;
 
-    return `https://wa.me{chiffres}?text=${encodeURIComponent(texte)}`;
+    return "https://wa.me" + chiffres + "?text=" + encodeURIComponent(texte);
   }
   if (loading) {
     return (
@@ -124,6 +125,7 @@ export default function MesDemandesPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-12">
+      {/* Section Artisan : Demandes de clients avec photos de panne */}
       {estArtisan && (
         <section>
           <div className="mb-6">
@@ -180,9 +182,31 @@ export default function MesDemandesPage() {
                       </span>
                     </div>
 
-                    <p className="text-gray-800 text-sm leading-relaxed mb-5 whitespace-pre-line">
+                    <p className="text-gray-800 text-sm leading-relaxed mb-4 whitespace-pre-line">
                       {demande.description}
                     </p>
+
+                    {/* Photos de la panne jointes par le client */}
+                    {demande.photos && demande.photos.length > 0 && (
+                      <div className="flex flex-wrap gap-3 mb-5">
+                        {demande.photos.map((photoUrl, idx) => (
+                          <a
+                            key={photoUrl + idx}
+                            href={photoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Cliquer pour agrandir la photo"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photoUrl}
+                              alt={`Photo panne ${idx + 1}`}
+                              className="w-24 h-24 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-100">
                       <a
@@ -208,6 +232,7 @@ export default function MesDemandesPage() {
         </section>
       )}
 
+      {/* Section Particulier : Mes propres demandes envoyées */}
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -244,7 +269,7 @@ export default function MesDemandesPage() {
             {mesDemandes.map((demande) => (
               <div
                 key={demande.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -266,6 +291,26 @@ export default function MesDemandesPage() {
                   <p className="text-gray-600 text-sm line-clamp-2 mt-1">
                     {demande.description}
                   </p>
+
+                  {demande.photos && demande.photos.length > 0 && (
+                    <div className="flex gap-2 mt-3">
+                      {demande.photos.map((photoUrl, idx) => (
+                        <a
+                          key={photoUrl + idx}
+                          href={photoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photoUrl}
+                            alt={`Ma photo ${idx + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {demande.statut === "ouverte" && (

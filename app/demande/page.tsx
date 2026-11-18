@@ -4,6 +4,7 @@ import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { compresserImage } from "@/lib/compressionImage";
 
 export default function DemandePage() {
   const [envoye, setEnvoye] = useState(false);
@@ -11,10 +12,29 @@ export default function DemandePage() {
   const [error, setError] = useState("");
   const [communeChoisie, setCommuneChoisie] = useState("");
   const [quartierSaisi, setQuartierSaisi] = useState("");
+  const [fichiersPhotos, setFichiersPhotos] = useState<File[]>([]);
+  const [apercusPhotos, setApercusPhotos] = useState<string[]>([]);
 
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
     : [];
+
+  function handleSelectionPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const selection = Array.from(e.target.files || []);
+    if (selection.length === 0) return;
+
+    const imagesValides = selection
+      .filter((f) => f.type.startsWith("image/") && f.size <= 15 * 1024 * 1024)
+      .slice(0, 2);
+
+    setFichiersPhotos(imagesValides);
+    setApercusPhotos(imagesValides.map((f) => URL.createObjectURL(f)));
+  }
+
+  function retirerPhoto(index: number) {
+    setFichiersPhotos((prev) => prev.filter((_, i) => i !== index));
+    setApercusPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,6 +57,43 @@ export default function DemandePage() {
     const budgetSaisi = ((formData.get("budget") as string) || "").trim() || null;
     const quartierPropre = quartierSaisi.trim() || null;
 
+    // 1. Upload et compression des photos de panne (si jointes)
+    const urlsPhotos: string[] = [];
+    try {
+      for (const fichier of fichiersPhotos) {
+        const fichierOpti = await compresserImage(fichier, 1200, 0.8);
+        const chemin =
+          "demandes/panne-" +
+          Date.now() +
+          "-" +
+          Math.random().toString(36).slice(2, 7) +
+          ".jpg";
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(chemin, fichierOpti, {
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(chemin);
+
+        urlsPhotos.push(urlData.publicUrl);
+      }
+    } catch (uploadErr: any) {
+      console.error("Erreur upload photo panne:", uploadErr);
+      setError(
+        "Impossible d'envoyer la photo : " +
+          (uploadErr.message || "Réessayez sans photo.")
+      );
+      setLoading(false);
+      return;
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user?.id ?? null;
 
@@ -51,6 +108,7 @@ export default function DemandePage() {
       description: descriptionSaisie,
       telephone: telephoneSaisi,
       budget: budgetSaisi,
+      photos: urlsPhotos,
       statut: "ouverte",
     };
 
@@ -75,7 +133,7 @@ export default function DemandePage() {
             quartierPropre ? ` (${quartierPropre})` : ""
           }\nTéléphone client : ${telephoneSaisi}\nBudget : ${
             budgetSaisi || "Non précisé"
-          }\n\nDescription :\n${descriptionSaisie}`,
+          }\nPhotos jointes : ${urlsPhotos.length}\n\nDescription :\n${descriptionSaisie}`,
         }),
       });
     } catch (mailError) {
@@ -85,7 +143,6 @@ export default function DemandePage() {
     setEnvoye(true);
     setLoading(false);
   }
-
   if (envoye) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -118,7 +175,7 @@ export default function DemandePage() {
     <div className="max-w-2xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold mb-2">Poster une demande</h1>
       <p className="text-gray-600 mb-8">
-        Décrivez votre besoin, des artisans qualifiés vous répondront.
+        Décrivez votre besoin et ajoutez une photo pour obtenir un devis précis.
       </p>
 
       <form
@@ -169,6 +226,54 @@ export default function DemandePage() {
           />
         </div>
 
+        {/* Ajout de photos de la panne (facultatif, max 2) */}
+        <div className="p-4 rounded-xl border border-dashed border-orange-300 bg-orange-50/40">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">
+                📷 Photos de la panne ou du chantier{" "}
+                <span className="text-gray-500 font-normal">(facultatif, max 2)</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Aide l&apos;artisan à évaluer le travail et les pièces nécessaires.
+              </p>
+            </div>
+
+            <label className="cursor-pointer bg-white border border-orange-300 text-orange-700 hover:bg-orange-50 text-xs font-semibold px-4 py-2 rounded-lg transition">
+              + Choisir des photos
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleSelectionPhotos}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {apercusPhotos.length > 0 && (
+            <div className="flex gap-3 mt-4">
+              {apercusPhotos.map((src, idx) => (
+                <div key={src} className="relative w-24 h-24">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`Aperçu ${idx + 1}`}
+                    className="w-full h-full object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => retirerPhoto(idx)}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center shadow"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Commune + Sous-quartier intelligent */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -211,7 +316,7 @@ export default function DemandePage() {
               onChange={(e) => setQuartierSaisi(e.target.value)}
               placeholder={
                 suggestionsQuartiers.length > 0
-                  ? `Ex: ${suggestionsQuartiers}...`
+                  ? "Ex: " + suggestionsQuartiers[0] + "..."
                   : "Choisir ou taper un quartier"
               }
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
