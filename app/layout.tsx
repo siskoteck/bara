@@ -1,14 +1,24 @@
-import { BoutonWhatsAppSupport } from "@/components/BoutonWhatsAppSupport";
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import "./globals.css";
+import { BoutonWhatsAppSupport } from "@/components/BoutonWhatsAppSupport";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "BARA - Trouvez un artisan de confiance à Abidjan",
+  title: "BARA Abidjan — Trouvez un artisan qualifié près de chez vous",
   description:
-    "Plateforme de mise en relation entre artisans et particuliers à Abidjan. Trouvez rapidement un plombier, électricien, maçon et plus encore.",
+    "L'annuaire des artisans vérifiés à Abidjan (plombier, électricien, frigoriste, menuisier, peintre, mécanicien...). Contact direct sur WhatsApp.",
 };
 
 export default function RootLayout({
@@ -18,16 +28,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
-        <Suspense fallback={<div className="h-16" />}>
-          <Header />
-        </Suspense>
-        <Suspense fallback={<div className="flex-1" />}>
-          <main className="flex-1">{children}</main>
-        </Suspense>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col`}
+      >
+        <Header />
+        <main className="flex-1">{children}</main>
         <Footer />
         <BoutonWhatsAppSupport />
-
       </body>
     </html>
   );

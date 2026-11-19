@@ -20,7 +20,6 @@ export function Footer() {
               Trouvez rapidement un professionnel de confiance près de chez vous.
             </p>
           </div>
-
           {/* Colonne 2 : Navigation rapide */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">
@@ -49,7 +48,6 @@ export function Footer() {
               </li>
             </ul>
           </div>
-
           {/* Colonne 3 : Espace Pro & Aide */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">
@@ -79,7 +77,6 @@ export function Footer() {
               </li>
             </ul>
           </div>
-
           {/* Colonne 4 : Support WhatsApp direct */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">
@@ -99,10 +96,9 @@ export function Footer() {
             </a>
           </div>
         </div>
-
         {/* Bas de page */}
         <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} BARA Abidjan. Tous droits réservés.</p>
+          <p>© 2026 BARA Abidjan. Tous droits réservés.</p>
           <div className="flex items-center gap-4">
             <Link href="/mentions-legales" className="hover:text-gray-300">
               Mentions légales
