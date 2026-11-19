@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +31,7 @@ interface Avis {
   commentaire: string | null;
 }
 
-export default function FicheArtisanPage() {
+function ContenuFicheArtisan() {
   const params = useParams();
   const rawId = params?.id;
   const idBrut = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
@@ -173,7 +173,6 @@ export default function FicheArtisanPage() {
         .toUpperCase()
         .slice(0, 2)
     : "A";
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       <Link
@@ -268,7 +267,6 @@ export default function FicheArtisanPage() {
             />
           </div>
         </div>
-
         <PartageSecuriteProche
           id={artisan.id}
           nom={artisan.name}
@@ -289,6 +287,7 @@ export default function FicheArtisanPage() {
             </p>
           </div>
         )}
+
         {artisan.realisations && artisan.realisations.length > 0 && (
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
@@ -314,7 +313,6 @@ export default function FicheArtisanPage() {
           </div>
         )}
       </div>
-
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Avis des clients ({avis.length})
@@ -419,5 +417,19 @@ export default function FicheArtisanPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function FicheArtisanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
+          Chargement de la fiche artisan...
+        </div>
+      }
+    >
+      <ContenuFicheArtisan />
+    </Suspense>
   );
 }
