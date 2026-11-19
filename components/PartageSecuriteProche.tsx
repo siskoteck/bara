@@ -10,8 +10,8 @@ interface PartageSecuriteProps {
   quartier?: string | null;
   telephone: string | null;
   verifie?: boolean | null;
+  estConnecte?: boolean;
 }
-
 
 export function PartageSecuriteProche({
   id,
@@ -21,6 +21,7 @@ export function PartageSecuriteProche({
   quartier,
   telephone,
   verifie,
+  estConnecte = false,
 }: PartageSecuriteProps) {
   const [copie, setCopie] = useState(false);
 
@@ -41,11 +42,11 @@ export function PartageSecuriteProche({
   const messageSecurite = [
     "🛡️ *INFO SÉCURITÉ - INTERVENTION À DOMICILE (BARA)*",
     "",
-    `Je fais intervenir cet artisan chez moi aujourd'hui :`,
+    "Je fais intervenir cet artisan chez moi aujourd'hui :",
     `• *Nom :* ${nom}`,
     `• *Métier :* ${metier}`,
     `• *Zone :* ${localisation}`,
-    telephone ? `• *Téléphone :* ${telephone}` : null,
+    estConnecte && telephone ? `• *Téléphone :* ${telephone}` : null,
     `• *Statut :* ${statutVerification}`,
     "",
     `Fiche complète et photos : ${urlFiche}`,
@@ -60,6 +61,7 @@ export function PartageSecuriteProche({
     setCopie(true);
     setTimeout(() => setCopie(false), 2500);
   }
+
   return (
     <div className="mt-6 p-4 sm:p-5 rounded-2xl bg-blue-50/70 border border-blue-200">
       <div className="flex items-start gap-3">
@@ -70,8 +72,7 @@ export function PartageSecuriteProche({
           </h3>
           <p className="text-xs text-blue-800 mt-1 leading-relaxed">
             Vous recevez cet artisan chez vous ? Prévenez un proche ou un voisin
-            en lui envoyant automatiquement sa fiche, son numéro et son statut
-            de vérification.
+            en lui envoyant automatiquement sa fiche et son statut de vérification.
           </p>
 
           <div className="flex flex-wrap gap-2.5 mt-3.5">
