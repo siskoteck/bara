@@ -10,6 +10,7 @@ import { RealisationsUpload } from "@/components/RealisationsUpload";
 import { CarteVisiteArtisan } from "@/components/CarteVisiteArtisan";
 import { GenerateurDevisPDF } from "@/components/GenerateurDevisPDF";
 import { ParrainageArtisan } from "@/components/ParrainageArtisan";
+import { ChangerMotDePasse } from "@/components/ChangerMotDePasse";
 import { SupprimerCompteButton } from "@/components/SupprimerCompteButton";
 
 type Fiche = {
@@ -60,7 +61,6 @@ export default function MonProfilPage() {
         .maybeSingle();
 
       if (erreur) {
-        console.error("Erreur chargement fiche:", erreur);
         setError("Impossible de charger votre fiche.");
       }
 
@@ -149,7 +149,6 @@ export default function MonProfilPage() {
       setFiche((prev) => (prev ? { ...prev, ...miseAJour } : null));
       setSucces(true);
     } catch (err: any) {
-      console.error("Erreur mise à jour fiche:", err);
       setError(err.message || "Une erreur est survenue");
     } finally {
       setSaving(false);
@@ -205,7 +204,6 @@ export default function MonProfilPage() {
           contacter sur WhatsApp.
         </p>
 
-        {/* Statut du badge Vérifié */}
         {fiche.verifie ? (
           <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3">
             <span className="text-xl">✅</span>
@@ -229,7 +227,7 @@ export default function MonProfilPage() {
               </p>
             </div>
             <a
-              href="https://wa.me/qr/KBH36JDX5MLEM1?s=r"
+              href="https://wa.me"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl text-center shrink-0 transition"
@@ -449,6 +447,8 @@ export default function MonProfilPage() {
           nomArtisan={fiche.name ?? "Artisan BARA"}
           codeParrainage={fiche.code_parrainage}
         />
+
+        <ChangerMotDePasse />
 
         <SupprimerCompteButton />
       </div>
