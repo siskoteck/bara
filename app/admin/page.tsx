@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ChangerMotDePasse } from "@/components/ChangerMotDePasse";
 
-const EMAIL_ADMIN = "cv2tcv2t@gmail.com";
+const EMAIL_ADMIN =
+  process.env.NEXT_PUBLIC_ADMIN_EMAIL || "cv2tcv2t@gmail.com";
 
 interface ArtisanAdmin {
   id: string;
@@ -27,7 +28,6 @@ interface DemandeAdmin {
   metier: string;
   commune: string;
   description: string;
-  statut?: string;
 }
 
 interface MessageAdmin {
@@ -39,18 +39,36 @@ interface MessageAdmin {
   message: string;
 }
 
+interface BanniereAdmin {
+  id: string | number;
+  created_at?: string;
+  titre: string;
+  description?: string | null;
+  image_url?: string | null;
+  lien?: string | null;
+  actif: boolean;
+}
 export default function AdminPage() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [onglet, setOnglet] = useState<"artisans" | "demandes" | "messages">(
-    "artisans"
-  );
+  const [onglet, setOnglet] = useState<
+    "artisans" | "demandes" | "messages" | "bannieres"
+  >("artisans");
 
   const [artisans, setArtisans] = useState<ArtisanAdmin[]>([]);
   const [demandes, setDemandes] = useState<DemandeAdmin[]>([]);
   const [messages, setMessages] = useState<MessageAdmin[]>([]);
+  const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
   const [recherche, setRecherche] = useState("");
+
+  // États création d'une bannière
+  const [titreBan, setTitreBan] = useState("");
+  const [descBan, setDescBan] = useState("");
+  const [imageBan, setImageBan] = useState("");
+  const [lienBan, setLienBan] = useState("");
+  const [ajoutBan, setAjoutBan] = useState(false);
+
   useEffect(() => {
     async function verifierEtCharger() {
       const { data } = await supabase.auth.getSession();
@@ -63,24 +81,30 @@ export default function AdminPage() {
 
       setAutorise(true);
 
-      const [resArtisans, resDemandes, resMessages] = await Promise.all([
-        supabase
-          .from("artisans")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("demandes")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("messages")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
+      const [resArtisans, resDemandes, resMessages, resBannieres] =
+        await Promise.all([
+          supabase
+            .from("artisans")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("demandes")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("messages")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("bannieres")
+            .select("*")
+            .order("created_at", { ascending: false }),
+        ]);
 
       if (resArtisans.data) setArtisans(resArtisans.data as ArtisanAdmin[]);
       if (resDemandes.data) setDemandes(resDemandes.data as DemandeAdmin[]);
       if (resMessages.data) setMessages(resMessages.data as MessageAdmin[]);
+      if (resBannieres.data) setBannieres(resBannieres.data as BanniereAdmin[]);
       setLoading(false);
     }
 
@@ -116,6 +140,62 @@ export default function AdminPage() {
       setDemandes((prev) => prev.filter((d) => d.id !== id));
     }
   }
+
+  async function handleAjouterBanniere(e: React.FormEvent) {
+    e.preventDefault();
+    if (!titreBan.trim()) return;
+
+    setAjoutBan(true);
+    const { data, error } = await supabase
+      .from("bannieres")
+      .insert([
+        {
+          titre: titreBan.trim(),
+          description: descBan.trim() || null,
+          image_url: imageBan.trim() || null,
+          lien: lienBan.trim() || null,
+          actif: true,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      alert("Erreur lors de l'ajout : " + error.message);
+    } else if (data) {
+      setBannieres((prev) => [data as BanniereAdmin, ...prev]);
+      setTitreBan("");
+      setDescBan("");
+      setImageBan("");
+      setLienBan("");
+    }
+    setAjoutBan(false);
+  }
+
+  async function toggleBanniereActif(
+    id: string | number,
+    statutActuel: boolean
+  ) {
+    const nouveauStatut = !statutActuel;
+    const { error } = await supabase
+      .from("bannieres")
+      .update({ actif: nouveauStatut })
+      .eq("id", id);
+
+    if (!error) {
+      setBannieres((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, actif: nouveauStatut } : b))
+      );
+    }
+  }
+
+  async function supprimerBanniere(id: string | number) {
+    if (!confirm("Supprimer cette bannière publicitaire ?")) return;
+    const { error } = await supabase.from("bannieres").delete().eq("id", id);
+    if (!error) {
+      setBannieres((prev) => prev.filter((b) => b.id !== id));
+    }
+  }
   if (loading || !autorise) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center text-gray-500">
@@ -147,10 +227,10 @@ export default function AdminPage() {
       </div>
 
       {/* Compteurs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase">
-            Artisans inscrits
+            Artisans
           </p>
           <p className="text-3xl font-extrabold text-gray-900 mt-1">
             {artisans.length}
@@ -162,7 +242,7 @@ export default function AdminPage() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase">
-            Demandes clients
+            Demandes
           </p>
           <p className="text-3xl font-extrabold text-orange-600 mt-1">
             {demandes.length}
@@ -171,10 +251,22 @@ export default function AdminPage() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
           <p className="text-xs font-semibold text-gray-500 uppercase">
-            Messages reçus
+            Messages
           </p>
           <p className="text-3xl font-extrabold text-blue-600 mt-1">
             {messages.length}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 uppercase">
+            Bannières
+          </p>
+          <p className="text-3xl font-extrabold text-purple-600 mt-1">
+            {bannieres.length}
+          </p>
+          <p className="text-xs text-purple-700 font-medium mt-1">
+            dont {bannieres.filter((b) => b.actif).length} active(s)
           </p>
         </div>
       </div>
@@ -215,6 +307,18 @@ export default function AdminPage() {
           }`}
         >
           ✉️ Messages ({messages.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setOnglet("bannieres")}
+          className={`px-4 py-2.5 rounded-xl text-sm font-bold transition ${
+            onglet === "bannieres"
+              ? "bg-orange-600 text-white"
+              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          📢 Bannières ({bannieres.length})
         </button>
       </div>
       {onglet === "artisans" && (
@@ -284,6 +388,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
       {onglet === "demandes" && (
         <div className="space-y-4">
           {demandes.length === 0 ? (
@@ -338,6 +443,140 @@ export default function AdminPage() {
               </div>
             ))
           )}
+        </div>
+      )}
+      {onglet === "bannieres" && (
+        <div className="space-y-6">
+          {/* Formulaire d'ajout d'une bannière */}
+          <form
+            onSubmit={handleAjouterBanniere}
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4"
+          >
+            <h2 className="text-lg font-bold text-gray-900">
+              ➕ Publier une nouvelle bannière publicitaire
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Titre de l&apos;annonce *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={titreBan}
+                  onChange={(e) => setTitreBan(e.target.value)}
+                  placeholder="Ex: Quincaillerie Abidjan -15% sur la peinture"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Lien de redirection (optionnel)
+                </label>
+                <input
+                  type="url"
+                  value={lienBan}
+                  onChange={(e) => setLienBan(e.target.value)}
+                  placeholder="https://wa.me..."
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Description courte (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={descBan}
+                  onChange={(e) => setDescBan(e.target.value)}
+                  placeholder="Livraison rapide dans toutes les communes..."
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  URL de l&apos;image (optionnel)
+                </label>
+                <input
+                  type="url"
+                  value={imageBan}
+                  onChange={(e) => setImageBan(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={ajoutBan}
+              className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+            >
+              {ajoutBan ? "Publication..." : "Publier la bannière"}
+            </button>
+          </form>
+
+          {/* Liste des bannières existantes */}
+          <div className="space-y-3">
+            {bannieres.length === 0 ? (
+              <p className="text-gray-500 text-sm">
+                Aucune bannière publiée pour le moment.
+              </p>
+            ) : (
+              bannieres.map((b) => (
+                <div
+                  key={b.id}
+                  className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                          b.actif
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {b.actif ? "🟢 Active" : "⚪ Masquée"}
+                      </span>
+                      <h3 className="font-bold text-gray-900">{b.titre}</h3>
+                    </div>
+                    {b.description && (
+                      <p className="text-xs text-gray-600">{b.description}</p>
+                    )}
+                    {b.lien && (
+                      <p className="text-xs text-blue-600 truncate mt-1">
+                        {b.lien}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleBanniereActif(b.id, b.actif)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50"
+                    >
+                      {b.actif ? "Masquer" : "Activer"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => supprimerBanniere(b.id)}
+                      className="text-xs font-bold text-red-600 hover:underline"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
