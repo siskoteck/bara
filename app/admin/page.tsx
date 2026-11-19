@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ChangerMotDePasse } from "@/components/ChangerMotDePasse";
 
-const EMAIL_ADMIN = "siskoteck@gmail.com";
+const EMAIL_ADMIN = "cv2tcv2t@gmail.com";
 
 interface ArtisanAdmin {
   id: string;
