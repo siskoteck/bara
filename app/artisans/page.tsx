@@ -2,11 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
-import { genererLienWhatsApp } from "@/lib/whatsapp";
-import { BannierePub } from "@/components/BannierePub";
+import { METIERS, COMMUNES } from "@/lib/constantes";
 
 interface Artisan {
   id: string;
@@ -14,140 +12,129 @@ interface Artisan {
   metier: string;
   commune: string | null;
   quartier?: string | null;
-  disponible?: boolean | null;
-  note?: number | null;
-  avis?: number | null;
   telephone: string | null;
   description: string | null;
-  avatar_url?: string | null;
-  verifie?: boolean | null;
+  avatar_url: string | null;
+  verifie: boolean | null;
+  disponible: boolean | null;
+  derniere_activite?: string | null;
+  recommandations?: number;
 }
 
-function AnnuaireArtisansContent() {
+function ListeArtisansContenu() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  const [metierFiltre, setMetierFiltre] = useState(
-    searchParams.get("metier") || ""
-  );
-  const [communeFiltre, setCommuneFiltre] = useState(
-    searchParams.get("commune") || ""
-  );
-  const [quartierFiltre, setQuartierFiltre] = useState(
-    searchParams.get("quartier") || ""
-  );
   const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [filtreMetier, setFiltreMetier] = useState(
+    searchParams.get("metier") || "Tous"
+  );
+  const [filtreCommune, setFiltreCommune] = useState(
+    searchParams.get("commune") || "Toutes"
+  );
+  const [recherche, setRecherche] = useState("");
+  const [uniquementDisponibles, setUniquementDisponibles] = useState(false);
+
   useEffect(() => {
-    setMetierFiltre(searchParams.get("metier") || "");
-    setCommuneFiltre(searchParams.get("commune") || "");
-    setQuartierFiltre(searchParams.get("quartier") || "");
-  }, [searchParams]);
+    async function chargerDonnees() {
+      const [resSession, resArtisans] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase
+          .from("artisans")
+          .select("*")
+          .order("verifie", { ascending: false })
+          .order("created_at", { ascending: false }),
+      ]);
 
-  const quartiersDisponibles = communeFiltre
-    ? QUARTIERS_PAR_COMMUNE[communeFiltre] || []
-    : [];
+      setUtilisateurConnecte(Boolean(resSession.data.session?.user));
 
-  useEffect(() => {
-    async function chargerArtisans() {
-      setLoading(true);
-      let query = supabase
-        .from("artisans")
-        .select("*")
-        .order("verifie", { ascending: false });
-
-      if (metierFiltre) {
-        query = query.eq("metier", metierFiltre);
-      }
-      if (communeFiltre) {
-        query = query.eq("commune", communeFiltre);
-      }
-      if (quartierFiltre.trim()) {
-        query = query.ilike("quartier", `%${quartierFiltre.trim()}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (!error && data) {
-        setArtisans(data);
+      if (resArtisans.data) {
+        setArtisans(resArtisans.data as Artisan[]);
       }
       setLoading(false);
     }
 
-    chargerArtisans();
-  }, [metierFiltre, communeFiltre, quartierFiltre]);
-
-  function appliquerFiltres(
-    nouveauMetier: string,
-    nouvelleCommune: string,
-    nouveauQuartier: string
-  ) {
-    setMetierFiltre(nouveauMetier);
-    setCommuneFiltre(nouvelleCommune);
-    setQuartierFiltre(nouveauQuartier);
-
-    const params = new URLSearchParams();
-    if (nouveauMetier) params.set("metier", nouveauMetier);
-    if (nouvelleCommune) params.set("commune", nouvelleCommune);
-    if (nouveauQuartier.trim()) params.set("quartier", nouveauQuartier.trim());
-
-    const queryString = params.toString();
-    router.replace(queryString ? `/artisans?${queryString}` : "/artisans");
+    chargerDonnees();
+  }, []);
+  function genererLienWhatsApp(tel: string | null, nomArtisan: string) {
+    let chiffres = (tel || "").replace(/\D/g, "");
+    if (chiffres.length === 10 && chiffres.startsWith("0")) {
+      chiffres = "225" + chiffres;
+    } else if (chiffres.startsWith("00225")) {
+      chiffres = chiffres.slice(2);
+    }
+    const texte = encodeURIComponent(
+      "Bonjour " +
+        nomArtisan +
+        ", j'ai vu votre profil sur BARA Abidjan et j'aimerais vous contacter pour un travail."
+    );
+    return "https://wa.me" + chiffres + "?text=" + texte;
   }
+
+  const artisansFiltres = artisans.filter((a) => {
+    const matchMetier =
+      filtreMetier === "Tous" ||
+      (a.metier || "").toLowerCase() === filtreMetier.toLowerCase();
+
+    const matchCommune =
+      filtreCommune === "Toutes" ||
+      (a.commune || "").toLowerCase() === filtreCommune.toLowerCase();
+
+    const matchDispo = !uniquementDisponibles || a.disponible !== false;
+
+    const terme = recherche.trim().toLowerCase();
+    const matchRecherche =
+      !terme ||
+      (a.name || "").toLowerCase().includes(terme) ||
+      (a.metier || "").toLowerCase().includes(terme) ||
+      (a.quartier || "").toLowerCase().includes(terme) ||
+      (a.description || "").toLowerCase().includes(terme);
+
+    return matchMetier && matchCommune && matchDispo && matchRecherche;
+  });
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Trouver un artisan à Abidjan
+        <h1 className="text-3xl font-extrabold text-gray-900">
+          Annuaire des artisans à Abidjan
         </h1>
-        <p className="text-gray-600 mt-1">
-          Filtrez par métier, commune et sous-quartier pour contacter directement un professionnel.
+        <p className="text-gray-600 text-sm mt-1">
+          {artisansFiltres.length} artisan(s) trouvé(s) près de chez vous.
         </p>
       </div>
 
       {/* Barre de filtres */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label
-            htmlFor="filtre-metier"
-            className="block text-xs font-medium text-gray-500 mb-1"
-          >
-            Métier
-          </label>
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-sm mb-8 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input
+            type="text"
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            placeholder="Rechercher un nom, un quartier (Angré, Zone 4...)"
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+          />
+
           <select
-            id="filtre-metier"
-            value={metierFiltre}
-            onChange={(e) =>
-              appliquerFiltres(e.target.value, communeFiltre, quartierFiltre)
-            }
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800 text-sm"
+            value={filtreMetier}
+            onChange={(e) => setFiltreMetier(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
           >
-            <option value="">Tous les métiers</option>
+            <option value="Tous">Tous les métiers</option>
             {METIERS.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
             ))}
           </select>
-        </div>
 
-        <div>
-          <label
-            htmlFor="filtre-commune"
-            className="block text-xs font-medium text-gray-500 mb-1"
-          >
-            Commune
-          </label>
           <select
-            id="filtre-commune"
-            value={communeFiltre}
-            onChange={(e) =>
-              appliquerFiltres(metierFiltre, e.target.value, "")
-            }
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 bg-white text-gray-800 text-sm"
+            value={filtreCommune}
+            onChange={(e) => setFiltreCommune(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
           >
-            <option value="">Toutes les communes</option>
+            <option value="Toutes">Toutes les communes</option>
             {COMMUNES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -156,74 +143,58 @@ function AnnuaireArtisansContent() {
           </select>
         </div>
 
-        <div>
-          <label
-            htmlFor="filtre-quartier"
-            className="block text-xs font-medium text-gray-500 mb-1"
-          >
-            Sous-quartier
+        <div className="flex items-center justify-between pt-1">
+          <label className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={uniquementDisponibles}
+              onChange={(e) => setUniquementDisponibles(e.target.checked)}
+              className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+            />
+            <span>🟢 Afficher uniquement les artisans disponibles immédiatement</span>
           </label>
-          <input
-            id="filtre-quartier"
-            type="text"
-            list="liste-quartiers-annuaire"
-            value={quartierFiltre}
-            onChange={(e) =>
-              appliquerFiltres(metierFiltre, communeFiltre, e.target.value)
-            }
-            placeholder={
-              quartiersDisponibles.length > 0
-                ? `Ex: ${quartiersDisponibles[0]}...`
-                : "Ex: Angré, Zone 4, Niangon..."
-            }
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
-          />
-          <datalist id="liste-quartiers-annuaire">
-            {quartiersDisponibles.map((q) => (
-              <option key={q} value={q} />
-            ))}
-          </datalist>
+
+          {(filtreMetier !== "Tous" ||
+            filtreCommune !== "Toutes" ||
+            recherche ||
+            uniquementDisponibles) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFiltreMetier("Tous");
+                setFiltreCommune("Toutes");
+                setRecherche("");
+                setUniquementDisponibles(false);
+              }}
+              className="text-xs font-semibold text-orange-600 hover:underline"
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
       </div>
-
-      {(metierFiltre || communeFiltre || quartierFiltre) && (
-        <div className="mb-6 flex justify-end">
-          <button
-            type="button"
-            onClick={() => appliquerFiltres("", "", "")}
-            className="px-4 py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50 rounded-xl border border-orange-200 transition"
-          >
-            ✕ Réinitialiser tous les filtres
-          </button>
-        </div>
-      )}
-
-      {/* Bannière Publicitaire */}
-      <BannierePub emplacement="annuaire" />
-
-      {/* Résultats */}
       {loading ? (
         <div className="text-center py-16 text-gray-500">
-          Recherche des artisans en cours...
+          Chargement des artisans d&apos;Abidjan...
         </div>
-      ) : artisans.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-          <p className="text-lg font-semibold text-gray-800 mb-2">
-            Aucun artisan trouvé pour ces critères
+      ) : artisansFiltres.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
+          <p className="text-gray-700 font-semibold mb-2">
+            Aucun artisan ne correspond à cette recherche.
           </p>
-          <p className="text-gray-600 mb-6">
-            Essayez d&apos;élargir votre recherche ou postez directement votre besoin.
+          <p className="text-xs text-gray-500 mb-5">
+            Essayez d&apos;élargir votre recherche à toute la ville d&apos;Abidjan ou postez votre besoin.
           </p>
           <Link
             href="/demande"
-            className="inline-block bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-orange-700 transition"
+            className="inline-block bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition"
           >
-            Poster une demande gratuitement
+            + Poster une demande gratuite
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {artisans.map((artisan) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {artisansFiltres.map((artisan) => {
             const initiales = artisan.name
               ? artisan.name
                   .split(" ")
@@ -236,92 +207,102 @@ function AnnuaireArtisansContent() {
             return (
               <div
                 key={artisan.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between hover:border-orange-300 transition"
               >
                 <div>
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-3.5 mb-3">
                     {artisan.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={artisan.avatar_url}
                         alt={artisan.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shrink-0"
+                        className="w-14 h-14 rounded-full object-cover border-2 border-orange-100 shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-bold border border-orange-200 shrink-0">
+                      <div className="w-14 h-14 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-extrabold shrink-0">
                         {initiales}
                       </div>
                     )}
 
-                    <div>
-                      <h2 className="font-bold text-lg text-gray-900">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        {artisan.verifie && (
+                          <span className="bg-green-100 text-green-800 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                            ✓ Vérifié
+                          </span>
+                        )}
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                            artisan.disponible !== false
+                              ? "bg-green-50 text-green-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {artisan.disponible !== false
+                            ? "🟢 Disponible"
+                            : "🟠 Occupé"}
+                        </span>
+                      </div>
+
+                      <h2 className="font-bold text-gray-900 text-base truncate">
                         {artisan.name}
                       </h2>
-                      <p className="text-orange-600 font-medium text-sm">
+                      <p className="text-orange-600 font-semibold text-xs">
                         {artisan.metier}
                       </p>
-                      {artisan.commune && (
-                        <p className="text-gray-500 text-xs mt-0.5">
-                          📍 {artisan.commune}
-                          {artisan.quartier ? ` (${artisan.quartier})` : ""}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Badges : Note, Vérifié, Disponibilité */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {artisan.note ? (
-                      <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 border border-yellow-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ★ {artisan.note} ({artisan.avis ?? 0})
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">
-                        Nouveau
-                      </span>
-                    )}
+                  <p className="text-xs text-gray-600 mb-2">
+                    📍 {artisan.commune || "Abidjan"}
+                    {artisan.quartier ? ` (${artisan.quartier})` : ""}
+                  </p>
 
-                    {artisan.verifie && (
-                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ✓ Vérifié
-                      </span>
+                  {typeof artisan.recommandations === "number" &&
+                    artisan.recommandations > 0 && (
+                      <p className="text-xs text-orange-700 font-semibold mb-2">
+                        👍 Recommandé par {artisan.recommandations} habitant(s)
+                      </p>
                     )}
-
-                    {artisan.disponible !== false && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                        🟢 Disponible
-                      </span>
-                    )}
-                  </div>
 
                   {artisan.description && (
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-4">
                       {artisan.description}
                     </p>
                   )}
                 </div>
 
-                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                {/* Boutons d'action selon statut de connexion */}
+                <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                   <Link
                     href={`/artisans/${artisan.id}`}
-                    className="flex-1 text-center py-2.5 px-3 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition"
+                    className="flex-1 text-center bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold py-2.5 rounded-xl transition"
                   >
                     Voir le profil
                   </Link>
-                  {artisan.telephone && (
-                    <a
-                      href={genererLienWhatsApp(
-                        artisan.telephone,
-                        artisan.name,
-                        artisan.metier,
-                        artisan.commune
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-center py-2.5 px-3 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition"
+
+                  {utilisateurConnecte ? (
+                    artisan.telephone && (
+                      <a
+                        href={genererLienWhatsApp(
+                          artisan.telephone,
+                          artisan.name
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl transition shrink-0"
+                      >
+                        💬 WhatsApp
+                      </a>
+                    )
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      title="Connectez-vous pour contacter cet artisan"
+                      className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold px-3 py-2.5 rounded-xl transition shrink-0"
                     >
-                      WhatsApp
-                    </a>
+                      🔒 Contact
+                    </Link>
                   )}
                 </div>
               </div>
@@ -337,12 +318,12 @@ export default function ArtisansPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-6xl mx-auto px-4 py-12 text-center text-gray-500">
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center text-gray-500">
           Chargement de l&apos;annuaire...
         </div>
       }
     >
-      <AnnuaireArtisansContent />
+      <ListeArtisansContenu />
     </Suspense>
   );
 }
