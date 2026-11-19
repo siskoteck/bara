@@ -87,7 +87,7 @@ export default function MonProfilPage() {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
     const nomInitial =
-      user?.user_metadata?.nom || user?.email?.split("@") || "Artisan BARA";
+      user?.user_metadata?.nom || user?.email?.split("@")[0] || "Artisan BARA";
 
     const { data: nouvelleFiche, error: insertError } = await supabase
       .from("artisans")
@@ -95,7 +95,7 @@ export default function MonProfilPage() {
         {
           user_id: userId,
           name: nomInitial,
-          metier: METIERS,
+          metier: METIERS[0] || "Plombier",
           commune: "Cocody",
           disponible: true,
         },
@@ -229,7 +229,7 @@ export default function MonProfilPage() {
               </p>
             </div>
             <a
-              href="https://wa.me"
+              href="https://wa.me/qr/KBH36JDX5MLEM1?s=r"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl text-center shrink-0 transition"
@@ -308,7 +308,7 @@ export default function MonProfilPage() {
             <select
               id="metier"
               name="metier"
-              defaultValue={fiche.metier ?? METIERS}
+              defaultValue={fiche.metier ?? METIERS[0]}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white"
             >
               {METIERS.map((m) => (
@@ -357,7 +357,7 @@ export default function MonProfilPage() {
                 onChange={(e) => setQuartierSaisi(e.target.value)}
                 placeholder={
                   suggestionsQuartiers.length > 0
-                    ? "Ex: " + suggestionsQuartiers + "..."
+                    ? "Ex: " + suggestionsQuartiers[0] + "..."
                     : "Choisir ou saisir un quartier"
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
@@ -427,7 +427,7 @@ export default function MonProfilPage() {
           </button>
         </form>
         <CarteVisiteArtisan
-          id={Number(fiche.id) || 0}
+          id={fiche.id}
           nom={fiche.name ?? "Artisan BARA"}
           metier={fiche.metier ?? "Artisan"}
           commune={fiche.commune}

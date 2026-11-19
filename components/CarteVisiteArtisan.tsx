@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 interface CarteVisiteProps {
-  id: number;
+  id: string | number;
   nom: string;
   metier: string;
   commune: string | null;
@@ -12,6 +12,7 @@ interface CarteVisiteProps {
   telephone: string | null;
   verifie?: boolean | null;
 }
+
 
 export function CarteVisiteArtisan({
   id,
