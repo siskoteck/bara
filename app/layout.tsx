@@ -1,3 +1,4 @@
+import { BoutonWhatsAppSupport } from "@/components/BoutonWhatsAppSupport";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Header } from "@/components/layout/Header";
@@ -25,6 +26,8 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
         </Suspense>
         <Footer />
+        <BoutonWhatsAppSupport />
+
       </body>
     </html>
   );
