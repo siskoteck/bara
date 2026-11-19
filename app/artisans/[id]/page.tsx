@@ -30,15 +30,16 @@ interface Avis {
   note: number;
   commentaire: string | null;
 }
-
 function ContenuFicheArtisan() {
   const params = useParams();
   const rawId = params?.id;
-  const idBrut = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
-  const id = decodeURIComponent(idBrut);
+  const id = decodeURIComponent(
+    String(Array.isArray(rawId) ? rawId : rawId ?? "")
+  );
 
   const [artisan, setArtisan] = useState<Artisan | null>(null);
   const [avis, setAvis] = useState<Avis[]>([]);
+  const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erreurChargement, setErreurChargement] = useState("");
 
@@ -56,7 +57,8 @@ function ContenuFicheArtisan() {
         return;
       }
 
-      const [resArtisan, resAvis] = await Promise.all([
+      const [resSession, resArtisan, resAvis] = await Promise.all([
+        supabase.auth.getSession(),
         supabase.from("artisans").select("*").eq("id", id).maybeSingle(),
         supabase
           .from("avis")
@@ -64,6 +66,8 @@ function ContenuFicheArtisan() {
           .eq("artisan_id", id)
           .order("created_at", { ascending: false }),
       ]);
+
+      setUtilisateurConnecte(Boolean(resSession.data.session?.user));
 
       if (resArtisan.error) {
         setErreurChargement(resArtisan.error.message);
@@ -168,7 +172,7 @@ function ContenuFicheArtisan() {
   const initiales = artisan.name
     ? artisan.name
         .split(" ")
-        .map((n) => n[0])
+        .map((n) => n)
         .join("")
         .toUpperCase()
         .slice(0, 2)
@@ -241,22 +245,50 @@ function ContenuFicheArtisan() {
               )}
             </p>
 
-            {artisan.telephone && (
-              <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
-                <a
-                  href={genererLienWhatsApp(artisan.telephone, artisan.name)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl text-sm transition"
-                >
-                  💬 Contacter sur WhatsApp
-                </a>
-                <a
-                  href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
-                  className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
-                >
-                  📞 Appeler ({artisan.telephone})
-                </a>
+            {/* Zone de contact : visible uniquement si connecté */}
+            {utilisateurConnecte ? (
+              artisan.telephone && (
+                <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
+                  <a
+                    href={genererLienWhatsApp(artisan.telephone, artisan.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl text-sm transition"
+                  >
+                    💬 Contacter sur WhatsApp
+                  </a>
+                  <a
+                    href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
+                    className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
+                  >
+                    📞 Appeler ({artisan.telephone})
+                  </a>
+                </div>
+              )
+            ) : (
+              <div className="mt-5 p-4 rounded-2xl bg-orange-50/80 border border-orange-200 text-left">
+                <p className="text-xs sm:text-sm font-bold text-gray-900">
+                  🔒 Numéro et WhatsApp réservés aux membres connectés
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Connectez-vous ou créez un compte gratuit en 30 secondes pour
+                  voir le numéro de <strong>{artisan.name}</strong> et le
+                  contacter directement.
+                </p>
+                <div className="flex flex-wrap gap-2.5 mt-3">
+                  <Link
+                    href="/auth/login"
+                    className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition"
+                  >
+                    Se connecter
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="bg-white hover:bg-orange-100/50 text-orange-700 border border-orange-300 text-xs font-semibold px-4 py-2 rounded-xl transition"
+                  >
+                    Créer un compte gratuit
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -275,6 +307,7 @@ function ContenuFicheArtisan() {
           quartier={artisan.quartier}
           telephone={artisan.telephone}
           verifie={artisan.verifie}
+          estConnecte={utilisateurConnecte}
         />
 
         {artisan.description && (
