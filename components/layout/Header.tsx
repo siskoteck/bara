@@ -21,8 +21,8 @@ function HeaderContenu() {
 
   function styleLienMobile(href: string) {
     return estActif(href)
-      ? "bg-orange-600 text-white font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition"
-      : "text-gray-700 hover:text-orange-600 font-semibold px-2.5 py-1.5 rounded-lg transition";
+      ? "bg-orange-600 text-white font-extrabold px-2 py-1.5 rounded-lg shadow-sm transition"
+      : "text-gray-700 hover:text-orange-600 font-semibold px-2 py-1.5 rounded-lg transition";
   }
 
   return (
@@ -44,6 +44,16 @@ function HeaderContenu() {
           <Link href="/artisans" className={styleLienDesktop("/artisans")}>
             Trouver un artisan
           </Link>
+          <Link
+            href="/sos"
+            className={`px-3.5 py-2 rounded-xl font-extrabold transition flex items-center gap-1 ${
+              estActif("/sos")
+                ? "bg-red-600 text-white shadow-sm ring-2 ring-red-300"
+                : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+            }`}
+          >
+            <span>🚨</span> SOS Urgence
+          </Link>
           <Link href="/tarifs" className={styleLienDesktop("/tarifs")}>
             Guide des tarifs
           </Link>
@@ -55,13 +65,23 @@ function HeaderContenu() {
         <AuthButtons />
       </div>
 
-      {/* Barre mobile avec surbrillance orange */}
-      <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-xs">
+      {/* Barre mobile avec surbrillance orange + SOS Urgence */}
+      <nav className="flex md:hidden items-center justify-around border-t border-gray-100 py-2 text-[11px]">
         <Link href="/" className={styleLienMobile("/")}>
           🏠 Accueil
         </Link>
         <Link href="/artisans" className={styleLienMobile("/artisans")}>
           🛠️ Artisans
+        </Link>
+        <Link
+          href="/sos"
+          className={`px-2 py-1.5 rounded-lg font-extrabold transition ${
+            estActif("/sos")
+              ? "bg-red-600 text-white shadow-sm"
+              : "bg-red-50 text-red-700"
+          }`}
+        >
+          🚨 SOS
         </Link>
         <Link href="/tarifs" className={styleLienMobile("/tarifs")}>
           💰 Tarifs
