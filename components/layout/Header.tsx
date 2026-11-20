@@ -45,9 +45,9 @@ function HeaderContenu() {
             Trouver un artisan
           </Link>
           <Link
-            href="/sos"
+            href="/sos-urgence"
             className={`px-3.5 py-2 rounded-xl font-extrabold transition flex items-center gap-1 ${
-              estActif("/sos")
+              estActif("/sos-urgence")
                 ? "bg-red-600 text-white shadow-sm ring-2 ring-red-300"
                 : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
             }`}
@@ -74,9 +74,9 @@ function HeaderContenu() {
           🛠️ Artisans
         </Link>
         <Link
-          href="/sos"
+          href="/sos-urgence"
           className={`px-2 py-1.5 rounded-lg font-extrabold transition ${
-            estActif("/sos")
+            estActif("/sos-urgence")
               ? "bg-red-600 text-white shadow-sm"
               : "bg-red-50 text-red-700"
           }`}
