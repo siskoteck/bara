@@ -1,10 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { METIERS, COMMUNES } from "@/lib/constantes";
+import {
+  GrilleArtisansSkeleton,
+  FallbackErreurBara,
+} from "@/components/shared/BaraSkeletons";
 
 interface Artisan {
   id: string;
@@ -27,6 +31,7 @@ function ListeArtisansContenu() {
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState(false);
 
   const [filtreMetier, setFiltreMetier] = useState(
     searchParams.get("metier") || "Tous"
@@ -37,27 +42,33 @@ function ListeArtisansContenu() {
   const [recherche, setRecherche] = useState("");
   const [uniquementDisponibles, setUniquementDisponibles] = useState(false);
 
-  useEffect(() => {
-    async function chargerDonnees() {
-      const [resSession, resArtisans] = await Promise.all([
-        supabase.auth.getSession(),
-        supabase
-          .from("artisans")
-          .select("*")
-          .order("verifie", { ascending: false })
-          .order("created_at", { ascending: false }),
-      ]);
+  const chargerDonnees = useCallback(async () => {
+    setLoading(true);
+    setErreurChargement(false);
 
-      setUtilisateurConnecte(Boolean(resSession.data.session?.user));
+    const [resSession, resArtisans] = await Promise.all([
+      supabase.auth.getSession(),
+      supabase
+        .from("artisans")
+        .select("*")
+        .order("verifie", { ascending: false })
+        .order("created_at", { ascending: false }),
+    ]);
 
-      if (resArtisans.data) {
-        setArtisans(resArtisans.data as Artisan[]);
-      }
-      setLoading(false);
+    setUtilisateurConnecte(Boolean(resSession.data.session?.user));
+
+    if (resArtisans.error) {
+      setErreurChargement(true);
+    } else if (resArtisans.data) {
+      setArtisans(resArtisans.data as Artisan[]);
     }
 
-    chargerDonnees();
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    chargerDonnees();
+  }, [chargerDonnees]);
   function genererLienWhatsApp(tel: string | null, nomArtisan: string) {
     let chiffres = (tel || "").replace(/\D/g, "");
     if (chiffres.length === 10 && chiffres.startsWith("0")) {
@@ -94,6 +105,7 @@ function ListeArtisansContenu() {
 
     return matchMetier && matchCommune && matchDispo && matchRecherche;
   });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8">
@@ -101,7 +113,9 @@ function ListeArtisansContenu() {
           Annuaire des artisans à Abidjan
         </h1>
         <p className="text-gray-600 text-sm mt-1">
-          {artisansFiltres.length} artisan(s) trouvé(s) près de chez vous.
+          {loading
+            ? "Recherche des professionnels disponibles près de chez vous..."
+            : `${artisansFiltres.length} artisan(s) trouvé(s) près de chez vous.`}
         </p>
       </div>
 
@@ -173,10 +187,14 @@ function ListeArtisansContenu() {
           )}
         </div>
       </div>
+
       {loading ? (
-        <div className="text-center py-16 text-gray-500">
-          Chargement des artisans d&apos;Abidjan...
-        </div>
+        <GrilleArtisansSkeleton count={6} />
+      ) : erreurChargement ? (
+        <FallbackErreurBara
+          titre="Impossible de charger l'annuaire des artisans"
+          onReessayer={chargerDonnees}
+        />
       ) : artisansFiltres.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
           <p className="text-gray-700 font-semibold mb-2">
@@ -272,7 +290,6 @@ function ListeArtisansContenu() {
                   )}
                 </div>
 
-                {/* Boutons d'action selon statut de connexion */}
                 <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                   <Link
                     href={`/artisans/${artisan.id}`}
@@ -318,8 +335,8 @@ export default function ArtisansPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-7xl mx-auto px-4 py-16 text-center text-gray-500">
-          Chargement de l&apos;annuaire...
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <GrilleArtisansSkeleton count={6} />
         </div>
       }
     >
