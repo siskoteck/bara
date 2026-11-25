@@ -15,7 +15,6 @@ export function construireLienWhatsAppArtisan(options: {
     if (lienQr.startsWith("wa.me/")) {
       return "https://" + lienQr;
     }
-    // Si l'artisan a collé uniquement le code après wa.me/qr/
     return "https://wa.me" + lienQr.replace(/^\/+/, "");
   }
 
@@ -33,4 +32,18 @@ export function construireLienWhatsAppArtisan(options: {
   );
 
   return `https://wa.me{chiffres}?text=${texte}`;
+}
+
+export function genererLienWhatsApp(
+  telephone: string | null | undefined,
+  nomArtisan?: string,
+  messagePersonnalise?: string,
+  whatsappLien?: string | null
+): string {
+  return construireLienWhatsAppArtisan({
+    whatsappLien,
+    telephone,
+    nomArtisan: nomArtisan || "l'artisan",
+    messagePersonnalise,
+  });
 }
