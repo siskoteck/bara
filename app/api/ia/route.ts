@@ -15,61 +15,77 @@ interface GeminiResponse {
 
 export async function POST(req: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (process.env.GEMINI_API_KEY || "").trim();
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Clé API IA non configurée sur le serveur." },
+        { error: "Clé GEMINI_API_KEY manquante sur Vercel." },
         { status: 500 }
       );
     }
 
-    const { message } = await req.json();
-    if (!message || typeof message !== "string") {
+    const body = await req.json();
+    const message = typeof body?.message === "string" ? body.message.trim() : "";
+    if (!message) {
       return NextResponse.json(
         { error: "Message invalide." },
         { status: 400 }
       );
     }
 
-    const systeme =
-      "Tu es l'assistant IA de BARA Abidjan (annuaire d'artisans vérifiés en Côte d'Ivoire : plombier, électricien, frigoriste, menuisier, serrurier, mécanicien, peintre, maçon). Réponds en français clair, concis et chaleureux. Aide le client à identifier la cause probable de sa panne, donne une estimation indicative des tarifs de main-d'œuvre à Abidjan en FCFA, recommande le métier BARA adapté (ou la page SOS Urgence en cas de danger) et donne les réflexes de sécurité.";
+    const host = (req.headers.get("host") || "").toLowerCase();
+    const estDjassa = host.includes("djassa");
 
-    const response = await fetch(
-      `https://googleapis.com{apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systeme }],
-          },
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: message.slice(0, 1500) }],
+    const systeme = estDjassa
+      ? "Tu es l'assistant IA de DJASSA Abidjan (plateforme de petites annonces et bonnes affaires en Côte d'Ivoire). Réponds en français clair, concis et chaleureux. Aide les acheteurs et vendeurs à Abidjan (estimation de prix en FCFA, rédaction d'annonces attractives, conseils de sécurité contre les arnaques)."
+      : "Tu es l'assistant IA de BARA Abidjan (annuaire d'artisans vérifiés en Côte d'Ivoire : plombier, électricien, frigoriste, menuisier, serrurier, mécanicien, peintre, maçon). Réponds en français clair, concis et chaleureux. Aide le client à diagnostiquer sa panne, donne une estimation indicative des tarifs à Abidjan en FCFA, et recommande le métier BARA adapté.";
+
+    const modeles = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    let derniereErreur = "Erreur inconnue avec l'API Gemini.";
+
+    for (const modele of modeles) {
+      const response = await fetch(
+        `https://googleapis.com{modele}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: systeme }],
             },
-          ],
-        }),
-      }
-    );
-
-    const data: GeminiResponse = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: data.error?.message || "Erreur lors de la réponse IA." },
-        { status: 500 }
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: message.slice(0, 1500) }],
+              },
+            ],
+          }),
+        }
       );
+
+      const texteBrut = await response.text();
+      let data: GeminiResponse = {};
+      try {
+        data = JSON.parse(texteBrut);
+      } catch {
+        derniereErreur = `Réponse non-JSON (${response.status})`;
+        continue;
+      }
+
+      if (response.ok) {
+        const reponseTexte =
+          data.candidates?.at(0)?.content?.parts?.at(0)?.text ||
+          "Désolé, je n'ai pas pu générer de réponse pour le moment.";
+        return NextResponse.json({ reponse: reponseTexte });
+      }
+
+      derniereErreur = data.error?.message || `Erreur HTTP ${response.status}`;
     }
 
-    const reponseTexte =
-      data.candidates?.at(0)?.content?.parts?.at(0)?.text ||
-      "Désolé, je n'ai pas pu générer de réponse pour le moment.";
-
-    return NextResponse.json({ reponse: reponseTexte });
-  } catch {
+    return NextResponse.json({ error: derniereErreur }, { status: 500 });
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json(
-      { error: "Erreur réseau avec le service IA." },
+      { error: `Erreur serveur IA : ${detail}` },
       { status: 500 }
     );
   }
