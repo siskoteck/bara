@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { construireLienWhatsAppArtisan } from "@/lib/whatsapp";
 import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
 import { BoutonRecommander } from "@/components/BoutonRecommander";
 import {
@@ -18,6 +19,7 @@ interface Artisan {
   commune: string | null;
   quartier?: string | null;
   telephone: string | null;
+  whatsapp_lien?: string | null;
   description: string | null;
   avatar_url: string | null;
   realisations: string[] | null;
@@ -165,21 +167,6 @@ function ContenuFicheArtisan() {
 
     setEnvoiAvis(false);
   }
-
-  function genererLienWhatsApp(tel: string | null, nomArtisan: string) {
-    let chiffres = (tel || "").replace(/\D/g, "");
-    if (chiffres.length === 10 && chiffres.startsWith("0")) {
-      chiffres = "225" + chiffres;
-    } else if (chiffres.startsWith("00225")) {
-      chiffres = chiffres.slice(2);
-    }
-    const texte = encodeURIComponent(
-      "Bonjour " +
-        nomArtisan +
-        ", je viens de BARA Abidjan et j'aimerais vous contacter pour un travail."
-    );
-    return "https://wa.me" + chiffres + "?text=" + texte;
-  }
   if (loading) {
     return <ProfilArtisanSkeleton />;
   }
@@ -234,9 +221,14 @@ function ContenuFicheArtisan() {
         .slice(0, 2)
     : "A";
 
-  const lienWhatsApp = artisan.telephone
-    ? genererLienWhatsApp(artisan.telephone, artisan.name)
-    : "";
+  const lienWhatsApp =
+    artisan.whatsapp_lien || artisan.telephone
+      ? construireLienWhatsAppArtisan({
+          whatsappLien: artisan.whatsapp_lien,
+          telephone: artisan.telephone,
+          nomArtisan: artisan.name,
+        })
+      : "";
 
   return (
     <div className="pb-24 md:pb-12">
@@ -375,23 +367,27 @@ function ContenuFicheArtisan() {
               </p>
 
               {utilisateurConnecte ? (
-                artisan.telephone && (
+                (lienWhatsApp || artisan.telephone) && (
                   <div className="mt-5 space-y-2">
                     <div className="flex flex-wrap justify-center sm:justify-start gap-3">
-                      <a
-                        href={lienWhatsApp}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-[#25D366] hover:bg-green-600 text-white font-bold px-5 py-3 rounded-xl text-sm transition shadow-sm"
-                      >
-                        💬 Contacter sur WhatsApp
-                      </a>
-                      <a
-                        href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
-                        className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
-                      >
-                        📞 Appeler ({artisan.telephone})
-                      </a>
+                      {lienWhatsApp && (
+                        <a
+                          href={lienWhatsApp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-[#25D366] hover:bg-green-600 text-white font-bold px-5 py-3 rounded-xl text-sm transition shadow-sm"
+                        >
+                          💬 Contacter sur WhatsApp
+                        </a>
+                      )}
+                      {artisan.telephone && (
+                        <a
+                          href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
+                          className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
+                        >
+                          📞 Appeler ({artisan.telephone})
+                        </a>
+                      )}
                       <Link
                         href={`/demande?metier=${encodeURIComponent(
                           artisan.metier
