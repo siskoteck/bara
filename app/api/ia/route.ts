@@ -1,6 +1,8 @@
 ﻿import https from "node:https";
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 interface GeminiResponse {
   candidates?: Array<{
     content?: {
@@ -36,7 +38,7 @@ function appelerGeminiHttps(
           "Content-Length": Buffer.byteLength(payload),
           "x-goog-api-key": apiKey,
         },
-        timeout: 15000,
+        timeout: 25000,
       },
       (res) => {
         let data = "";
@@ -50,7 +52,7 @@ function appelerGeminiHttps(
     );
 
     req.on("timeout", () => {
-      req.destroy(new Error("Délai dépassé (timeout 15s) vers Google Gemini."));
+      req.destroy(new Error("Délai dépassé (timeout 25s) vers Google Gemini."));
     });
     req.on("error", (err) => reject(err));
     req.write(payload);
@@ -97,6 +99,11 @@ export async function POST(req: Request) {
           parts: [{ text: message.slice(0, 1500) }],
         },
       ],
+      generationConfig: {
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+      },
     });
 
     const modeles = ["gemini-3.8-flash", "gemini-4-hydrogen"];
