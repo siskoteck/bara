@@ -43,31 +43,34 @@ export async function POST(req: Request) {
     let derniereErreur = "Erreur inconnue avec l'API Gemini.";
 
     for (const modele of modeles) {
-      const response = await fetch(
-        `https://googleapis.com{modele}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systeme }],
+      const url =
+        "https://googleapis.com" +
+        modele +
+        ":generateContent?key=" +
+        encodeURIComponent(apiKey);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systeme }],
+          },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: message.slice(0, 1500) }],
             },
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: message.slice(0, 1500) }],
-              },
-            ],
-          }),
-        }
-      );
+          ],
+        }),
+      });
 
       const texteBrut = await response.text();
       let data: GeminiResponse = {};
       try {
         data = JSON.parse(texteBrut);
       } catch {
-        derniereErreur = `Réponse non-JSON (${response.status})`;
+        derniereErreur = "Réponse non-JSON (" + response.status + ")";
         continue;
       }
 
@@ -78,14 +81,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ reponse: reponseTexte });
       }
 
-      derniereErreur = data.error?.message || `Erreur HTTP ${response.status}`;
+      derniereErreur = data.error?.message || "Erreur HTTP " + response.status;
     }
 
     return NextResponse.json({ error: derniereErreur }, { status: 500 });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.json(
-      { error: `Erreur serveur IA : ${detail}` },
+      { error: "Erreur serveur IA : " + detail },
       { status: 500 }
     );
   }
