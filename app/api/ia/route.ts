@@ -3,26 +3,12 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 30;
 
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-}
-
 const GEMINI_HOST = Buffer.from(
   "Z2VuZXJhdGl2ZWxhbmd1YWdlLmdvb2dsZWFwaXMuY29t",
   "base64"
 ).toString("utf8");
 
-function appelerGeminiHttps(
-  modele: string,
+function appelerGeminiRapide(
   apiKey: string,
   payload: string
 ): Promise<{ status: number; body: string }> {
@@ -31,14 +17,14 @@ function appelerGeminiHttps(
       {
         hostname: GEMINI_HOST,
         port: 443,
-        path: `/v1beta/models/${modele}:generateContent`,
+        path: "/v1beta/models/gemini-3.8-flash:generateContent",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(payload),
           "x-goog-api-key": apiKey,
         },
-        timeout: 25000,
+        timeout: 8500,
       },
       (res) => {
         let data = "";
@@ -52,7 +38,7 @@ function appelerGeminiHttps(
     );
 
     req.on("timeout", () => {
-      req.destroy(new Error("Délai dépassé (timeout 25s) vers Google Gemini."));
+      req.destroy(new Error("Délai dépassé (8.5s)"));
     });
     req.on("error", (err) => reject(err));
     req.write(payload);
@@ -86,8 +72,8 @@ export async function POST(req: Request) {
     const estDjassa = host.includes("djassa");
 
     const systeme = estDjassa
-      ? "Tu es l'assistant IA de DJASSA Abidjan (plateforme de petites annonces et bonnes affaires en Côte d'Ivoire). Réponds en français clair, concis et chaleureux. Aide les acheteurs et vendeurs à Abidjan (estimation de prix en FCFA, rédaction d'annonces attractives, conseils de sécurité contre les arnaques)."
-      : "Tu es l'assistant IA de BARA Abidjan (annuaire d'artisans vérifiés en Côte d'Ivoire : plombier, électricien, frigoriste, menuisier, serrurier, mécanicien, peintre, maçon). Réponds en français clair, concis et chaleureux. Aide le client à diagnostiquer sa panne, donne une estimation indicative des tarifs à Abidjan en FCFA, et recommande le métier BARA adapté.";
+      ? "Tu es l'assistant IA de DJASSA Abidjan. Réponds en français clair et très concis (3 à 5 lignes max) : estimation FCFA, conseil achat ou aide rédaction."
+      : "Tu es l'assistant IA de BARA Abidjan. Réponds en français clair et très concis (3 à 5 lignes max) : cause probable de la panne, tarif indicatif à Abidjan en FCFA et métier artisan à contacter.";
 
     const payload = JSON.stringify({
       systemInstruction: {
@@ -96,49 +82,51 @@ export async function POST(req: Request) {
       contents: [
         {
           role: "user",
-          parts: [{ text: message.slice(0, 1500) }],
+          parts: [{ text: message.slice(0, 800) }],
         },
       ],
       generationConfig: {
+        maxOutputTokens: 350,
         thinkingConfig: {
           thinkingBudget: 0,
         },
       },
     });
 
-    const modeles = ["gemini-3.8-flash", "gemini-4-hydrogen"];
-    let derniereErreur = "Erreur inconnue avec l'API Gemini.";
+    const { status, body: texteBrut } = await appelerGeminiRapide(
+      apiKey,
+      payload
+    );
 
-    for (const modele of modeles) {
-      const { status, body: texteBrut } = await appelerGeminiHttps(
-        modele,
-        apiKey,
-        payload
+    let data: {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      error?: { message?: string };
+    } = {};
+
+    try {
+      data = JSON.parse(texteBrut);
+    } catch {
+      return NextResponse.json(
+        { error: "Réponse invalide de Google (" + status + ")" },
+        { status: 500 }
       );
-
-      let data: GeminiResponse = {};
-      try {
-        data = JSON.parse(texteBrut);
-      } catch {
-        derniereErreur = "Réponse non-JSON (" + status + ")";
-        continue;
-      }
-
-      if (status >= 200 && status < 300) {
-        const reponseTexte =
-          data.candidates?.at(0)?.content?.parts?.at(0)?.text ||
-          "Désolé, je n'ai pas pu générer de réponse pour le moment.";
-        return NextResponse.json({ reponse: reponseTexte });
-      }
-
-      derniereErreur = data.error?.message || "Erreur HTTP " + status;
     }
 
-    return NextResponse.json({ error: derniereErreur }, { status: 500 });
+    if (status >= 200 && status < 300) {
+      const reponseTexte =
+        data.candidates?.at(0)?.content?.parts?.at(0)?.text ||
+        "Désolé, aucune réponse générée.";
+      return NextResponse.json({ reponse: reponseTexte });
+    }
+
+    return NextResponse.json(
+      { error: data.error?.message || "Erreur Google HTTP " + status },
+      { status: 500 }
+    );
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Erreur connexion Gemini : " + detail },
+      { error: "Erreur serveur IA : " + detail },
       { status: 500 }
     );
   }
