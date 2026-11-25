@@ -1,4 +1,5 @@
-﻿import { NextResponse } from "next/server";
+﻿import https from "node:https";
+import { NextResponse } from "next/server";
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -13,9 +14,47 @@ interface GeminiResponse {
   };
 }
 
+function appelerGeminiHttps(
+  modele: string,
+  apiKey: string,
+  payload: string
+): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: "://googleapis.com",
+        port: 443,
+        path: `/v1beta/models/${modele}:generateContent`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload),
+          "x-goog-api-key": apiKey,
+        },
+        timeout: 15000,
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          resolve({ status: res.statusCode || 500, body: data });
+        });
+      }
+    );
+
+    req.on("timeout", () => {
+      req.destroy(new Error("Délai dépassé (timeout 15s) vers Google Gemini."));
+    });
+    req.on("error", (err) => reject(err));
+    req.write(payload);
+    req.end();
+  });
+}
+
 export async function POST(req: Request) {
   try {
-    // Nettoie les espaces, guillemets et caractères invisibles éventuels
     const apiKey = (process.env.GEMINI_API_KEY || "")
       .replace(/["'\s\r\n]/g, "")
       .trim();
@@ -43,54 +82,51 @@ export async function POST(req: Request) {
       ? "Tu es l'assistant IA de DJASSA Abidjan (plateforme de petites annonces et bonnes affaires en Côte d'Ivoire). Réponds en français clair, concis et chaleureux. Aide les acheteurs et vendeurs à Abidjan (estimation de prix en FCFA, rédaction d'annonces attractives, conseils de sécurité contre les arnaques)."
       : "Tu es l'assistant IA de BARA Abidjan (annuaire d'artisans vérifiés en Côte d'Ivoire : plombier, électricien, frigoriste, menuisier, serrurier, mécanicien, peintre, maçon). Réponds en français clair, concis et chaleureux. Aide le client à diagnostiquer sa panne, donne une estimation indicative des tarifs à Abidjan en FCFA, et recommande le métier BARA adapté.";
 
-    const baseUrl = ["https://", "generativelanguage", "://"].join("");
+    const payload = JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: systeme }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: message.slice(0, 1500) }],
+        },
+      ],
+    });
+
     const modeles = ["gemini-2.5-flash", "gemini-2.0-flash"];
     let derniereErreur = "Erreur inconnue avec l'API Gemini.";
 
     for (const modele of modeles) {
-      const response = await fetch(baseUrl + modele + ":generateContent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systeme }],
-          },
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: message.slice(0, 1500) }],
-            },
-          ],
-        }),
-      });
+      const { status, body: texteBrut } = await appelerGeminiHttps(
+        modele,
+        apiKey,
+        payload
+      );
 
-      const texteBrut = await response.text();
       let data: GeminiResponse = {};
       try {
         data = JSON.parse(texteBrut);
       } catch {
-        derniereErreur = "Réponse non-JSON (" + response.status + ")";
+        derniereErreur = "Réponse non-JSON (" + status + ")";
         continue;
       }
 
-      if (response.ok) {
+      if (status >= 200 && status < 300) {
         const reponseTexte =
           data.candidates?.at(0)?.content?.parts?.at(0)?.text ||
           "Désolé, je n'ai pas pu générer de réponse pour le moment.";
         return NextResponse.json({ reponse: reponseTexte });
       }
 
-      derniereErreur = data.error?.message || "Erreur HTTP " + response.status;
+      derniereErreur = data.error?.message || "Erreur HTTP " + status;
     }
 
     return NextResponse.json({ error: derniereErreur }, { status: 500 });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Erreur réseau IA : " + detail },
+      { error: "Erreur connexion Gemini : " + detail },
       { status: 500 }
     );
   }
