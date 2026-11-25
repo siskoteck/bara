@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -51,7 +51,6 @@ function ContenuFicheArtisan() {
   const [erreurChargement, setErreurChargement] = useState("");
   const [photoZoom, setPhotoZoom] = useState<string | null>(null);
   const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
-  const heroRef = useRef<HTMLDivElement | null>(null);
 
   const [auteur, setAuteur] = useState("");
   const [note, setNote] = useState(5);
@@ -60,19 +59,22 @@ function ContenuFicheArtisan() {
   const [messageAvis, setMessageAvis] = useState("");
 
   useEffect(() => {
-    const cible = heroRef.current;
-    if (!cible) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setAfficherHeaderMobile(!entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(cible);
-    return () => observer.disconnect();
-  }, [artisan]);
+    function surDefilement() {
+      const pos =
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        0;
+      setAfficherHeaderMobile(pos > 120);
+    }
+    surDefilement();
+    window.addEventListener("scroll", surDefilement, {
+      passive: true,
+      capture: true,
+    });
+    return () =>
+      window.removeEventListener("scroll", surDefilement, { capture: true });
+  }, []);
   const chargerFiche = useCallback(async () => {
     if (!id || id === "undefined" || id === "null") {
       setErreurChargement("Identifiant manquant dans l'adresse URL.");
@@ -238,52 +240,56 @@ function ContenuFicheArtisan() {
 
   return (
     <div className="pb-24 md:pb-12">
-      {/* Header fixe mobile au défilement */}
+      {/* Header fixe au défilement */}
       {afficherHeaderMobile && (
-        <div className="fixed top-0 inset-x-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-md">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {artisan.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={artisan.avatar_url}
-                alt={artisan.name}
-                className="w-9 h-9 rounded-full object-cover border border-orange-200 shrink-0"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-extrabold shrink-0">
-                {initiales}
+        <div
+          style={{ zIndex: 9999 }}
+          className="fixed top-0 inset-x-0 bg-white/95 backdrop-blur-md border-b border-orange-200 px-4 py-2.5 shadow-lg"
+        >
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {artisan.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={artisan.avatar_url}
+                  alt={artisan.name}
+                  className="w-9 h-9 rounded-full object-cover border border-orange-200 shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-extrabold shrink-0">
+                  {initiales}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-extrabold text-gray-900 truncate">
+                  {artisan.name}
+                </p>
+                <p className="text-[11px] text-orange-600 font-semibold truncate">
+                  {artisan.metier} • {artisan.commune || "Abidjan"}
+                </p>
               </div>
-            )}
-            <div className="min-w-0">
-              <p className="text-xs font-extrabold text-gray-900 truncate">
-                {artisan.name}
-              </p>
-              <p className="text-[11px] text-orange-600 font-semibold truncate">
-                {artisan.metier} • {artisan.commune || "Abidjan"}
-              </p>
             </div>
-          </div>
 
-          {utilisateurConnecte && lienWhatsApp ? (
-            <a
-              href={lienWhatsApp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[#25D366] hover:bg-green-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shrink-0 shadow-sm"
-            >
-              💬 WhatsApp
-            </a>
-          ) : (
-            <Link
-              href="/auth/login"
-              className="bg-orange-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shrink-0"
-            >
-              Contact
-            </Link>
-          )}
+            {utilisateurConnecte && lienWhatsApp ? (
+              <a
+                href={lienWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#25D366] hover:bg-green-600 text-white text-xs font-bold px-3.5 py-2 rounded-full shrink-0 shadow-sm"
+              >
+                💬 WhatsApp
+              </a>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-3.5 py-2 rounded-full shrink-0"
+              >
+                Contact
+              </Link>
+            )}
+          </div>
         </div>
       )}
-
       <div className="max-w-4xl mx-auto px-4 pt-6 sm:pt-10 space-y-8">
         <Link
           href="/artisans"
@@ -293,10 +299,7 @@ function ContenuFicheArtisan() {
         </Link>
 
         {/* Carte Hero / Profil principal */}
-        <div
-          ref={heroRef}
-          className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm"
-        >
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {artisan.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -370,6 +373,7 @@ function ContenuFicheArtisan() {
                   </span>
                 )}
               </p>
+
               {utilisateurConnecte ? (
                 artisan.telephone && (
                   <div className="mt-5 space-y-2">
@@ -438,7 +442,6 @@ function ContenuFicheArtisan() {
               />
             </div>
           </div>
-
           <PartageSecuriteProche
             id={artisan.id}
             nom={artisan.name}
