@@ -413,11 +413,24 @@ export default function MonProfilPage() {
               placeholder="https://wa.me"
               className="w-full border border-green-300 rounded-lg px-3.5 py-2.5 text-sm bg-white"
             />
-            <p className="text-xs text-green-900 leading-relaxed">
-              <strong>Comment obtenir ce lien ?</strong> Ouvrez{" "}
-              <strong>WhatsApp → Paramètres → icône QR Code</strong> (en haut à droite) →{" "}
-              <strong>Partager → Copier le lien</strong>, puis collez-le ici.
-            </p>
+                        <div className="text-xs text-green-900 space-y-1.5 pt-1">
+              <p className="font-bold">Comment obtenir ce lien ?</p>
+              <p>
+                <strong>🤖 Sur Android :</strong> Ouvrez{" "}
+                <strong>WhatsApp → ⋮ (3 points en haut à droite) → Paramètres → icône QR Code</strong>{" "}
+                (à côté de votre nom) → <strong>icône Partager → Copier</strong>.
+              </p>
+              <p>
+                <strong>🍎 Sur iPhone (iOS) :</strong> Ouvrez{" "}
+                <strong>WhatsApp → Réglages</strong> (en bas à droite) →{" "}
+                <strong>icône QR Code</strong> (à côté de votre nom) →{" "}
+                <strong>Partager (en haut à droite) → Copier</strong>.
+              </p>
+              <p className="text-[11px] text-green-800 italic">
+                💡 Sur <strong>WhatsApp Business</strong> : <strong>Paramètres / Réglages → Outils professionnels → Lien court → Copier le lien</strong>.
+              </p>
+            </div>
+
             {(whatsappLienSaisi.trim() || fiche.telephone) && (
               <div className="pt-1">
                 <a
