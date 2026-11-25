@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BoutonWhatsAppSupport } from "@/components/BoutonWhatsAppSupport";
+import { AssistantIABara } from "@/components/AssistantIABara";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <AssistantIABara />
         <BoutonWhatsAppSupport />
       </body>
     </html>
