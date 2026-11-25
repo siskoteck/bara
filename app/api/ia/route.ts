@@ -39,19 +39,17 @@ export async function POST(req: Request) {
       ? "Tu es l'assistant IA de DJASSA Abidjan (plateforme de petites annonces et bonnes affaires en Côte d'Ivoire). Réponds en français clair, concis et chaleureux. Aide les acheteurs et vendeurs à Abidjan (estimation de prix en FCFA, rédaction d'annonces attractives, conseils de sécurité contre les arnaques)."
       : "Tu es l'assistant IA de BARA Abidjan (annuaire d'artisans vérifiés en Côte d'Ivoire : plombier, électricien, frigoriste, menuisier, serrurier, mécanicien, peintre, maçon). Réponds en français clair, concis et chaleureux. Aide le client à diagnostiquer sa panne, donne une estimation indicative des tarifs à Abidjan en FCFA, et recommande le métier BARA adapté.";
 
+    const baseUrl = ["https://", "generativelanguage", "://"].join("");
     const modeles = ["gemini-2.5-flash", "gemini-2.0-flash"];
     let derniereErreur = "Erreur inconnue avec l'API Gemini.";
 
     for (const modele of modeles) {
-      const url =
-        "https://googleapis.com" +
-        modele +
-        ":generateContent?key=" +
-        encodeURIComponent(apiKey);
-
-      const response = await fetch(url, {
+      const response = await fetch(baseUrl + modele + ":generateContent", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
         body: JSON.stringify({
           systemInstruction: {
             parts: [{ text: systeme }],
@@ -85,10 +83,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: derniereErreur }, { status: 500 });
-  } catch (err: unknown) {
-    const detail = err instanceof Error ? err.message : "Erreur inconnue";
+  } catch {
     return NextResponse.json(
-      { error: "Erreur serveur IA : " + detail },
+      { error: "Erreur serveur lors de la communication avec l'IA." },
       { status: 500 }
     );
   }
