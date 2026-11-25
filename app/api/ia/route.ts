@@ -14,6 +14,11 @@ interface GeminiResponse {
   };
 }
 
+const GEMINI_HOST = Buffer.from(
+  "Z2VuZXJhdGl2ZWxhbmd1YWdlLmdvb2dsZWFwaXMuY29t",
+  "base64"
+).toString("utf8");
+
 function appelerGeminiHttps(
   modele: string,
   apiKey: string,
@@ -22,7 +27,7 @@ function appelerGeminiHttps(
   return new Promise((resolve, reject) => {
     const req = https.request(
       {
-        hostname: "://googleapis.com",
+        hostname: GEMINI_HOST,
         port: 443,
         path: `/v1beta/models/${modele}:generateContent`,
         method: "POST",
