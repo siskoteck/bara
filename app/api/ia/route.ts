@@ -15,7 +15,11 @@ interface GeminiResponse {
 
 export async function POST(req: Request) {
   try {
-    const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+    // Nettoie les espaces, guillemets et caractères invisibles éventuels
+    const apiKey = (process.env.GEMINI_API_KEY || "")
+      .replace(/["'\s\r\n]/g, "")
+      .trim();
+
     if (!apiKey) {
       return NextResponse.json(
         { error: "Clé GEMINI_API_KEY manquante sur Vercel." },
@@ -83,9 +87,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: derniereErreur }, { status: 500 });
-  } catch {
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Erreur serveur lors de la communication avec l'IA." },
+      { error: "Erreur réseau IA : " + detail },
       { status: 500 }
     );
   }
