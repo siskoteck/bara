@@ -99,7 +99,7 @@ export async function POST(req: Request) {
       ],
     });
 
-    const modeles = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    const modeles = ["gemini-3.8-flash", "gemini-2.5-flash"];
     let derniereErreur = "Erreur inconnue avec l'API Gemini.";
 
     for (const modele of modeles) {
