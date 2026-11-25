@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +51,7 @@ function ContenuFicheArtisan() {
   const [erreurChargement, setErreurChargement] = useState("");
   const [photoZoom, setPhotoZoom] = useState<string | null>(null);
   const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
+  const heroRef = useRef<HTMLDivElement | null>(null);
 
   const [auteur, setAuteur] = useState("");
   const [note, setNote] = useState(5);
@@ -59,12 +60,19 @@ function ContenuFicheArtisan() {
   const [messageAvis, setMessageAvis] = useState("");
 
   useEffect(() => {
-    function surDefilement() {
-      setAfficherHeaderMobile(window.scrollY > 180);
-    }
-    window.addEventListener("scroll", surDefilement, { passive: true });
-    return () => window.removeEventListener("scroll", surDefilement);
-  }, []);
+    const cible = heroRef.current;
+    if (!cible) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setAfficherHeaderMobile(!entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(cible);
+    return () => observer.disconnect();
+  }, [artisan]);
   const chargerFiche = useCallback(async () => {
     if (!id || id === "undefined" || id === "null") {
       setErreurChargement("Identifiant manquant dans l'adresse URL.");
@@ -229,10 +237,10 @@ function ContenuFicheArtisan() {
     : "";
 
   return (
-    <div className="pb-24 sm:pb-12">
+    <div className="pb-24 md:pb-12">
       {/* Header fixe mobile au défilement */}
       {afficherHeaderMobile && (
-        <div className="fixed top-0 inset-x-0 z-50 sm:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-md">
+        <div className="fixed top-0 inset-x-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-md">
           <div className="flex items-center gap-2.5 min-w-0">
             {artisan.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -285,7 +293,10 @@ function ContenuFicheArtisan() {
         </Link>
 
         {/* Carte Hero / Profil principal */}
-        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <div
+          ref={heroRef}
+          className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm"
+        >
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {artisan.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -775,7 +786,7 @@ function ContenuFicheArtisan() {
         </div>
       )}
 
-      <div className="fixed bottom-0 inset-x-0 z-30 sm:hidden bg-white border-t border-gray-200 p-3 shadow-lg">
+      <div className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-white border-t border-gray-200 p-3 shadow-lg">
         {utilisateurConnecte && lienWhatsApp ? (
           <a
             href={lienWhatsApp}
