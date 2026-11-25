@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { construireLienWhatsAppArtisan } from "@/lib/whatsapp";
 import { METIERS, COMMUNES, QUARTIERS_PAR_COMMUNE } from "@/lib/constantes";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { RealisationsUpload } from "@/components/RealisationsUpload";
@@ -24,6 +25,7 @@ type Fiche = {
   code_parrainage: string | null;
   description: string | null;
   telephone: string | null;
+  whatsapp_lien: string | null;
   avatar_url: string | null;
   realisations: string[] | null;
 };
@@ -34,6 +36,7 @@ export default function MonProfilPage() {
   const [fiche, setFiche] = useState<Fiche | null>(null);
   const [communeChoisie, setCommuneChoisie] = useState<string>("");
   const [quartierSaisi, setQuartierSaisi] = useState<string>("");
+  const [whatsappLienSaisi, setWhatsappLienSaisi] = useState<string>("");
   const [disponible, setDisponible] = useState<boolean>(true);
   const [chargement, setChargement] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,7 +58,7 @@ export default function MonProfilPage() {
       const { data: ligne, error: erreur } = await supabase
         .from("artisans")
         .select(
-          "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, avatar_url, realisations"
+          "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, whatsapp_lien, avatar_url, realisations"
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -68,6 +71,7 @@ export default function MonProfilPage() {
         setFiche(ligne);
         setCommuneChoisie(ligne.commune ?? "");
         setQuartierSaisi(ligne.quartier ?? "");
+        setWhatsappLienSaisi(ligne.whatsapp_lien ?? "");
         setDisponible(ligne.disponible ?? true);
       }
       setChargement(false);
@@ -79,6 +83,7 @@ export default function MonProfilPage() {
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
     : [];
+
   async function creerMaFicheArtisan() {
     if (!userId) return;
     setSaving(true);
@@ -101,7 +106,7 @@ export default function MonProfilPage() {
         },
       ])
       .select(
-        "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, avatar_url, realisations"
+        "id, name, metier, commune, quartier, disponible, verifie, code_parrainage, description, telephone, whatsapp_lien, avatar_url, realisations"
       )
       .single();
 
@@ -131,6 +136,7 @@ export default function MonProfilPage() {
       disponible,
       description: ((formData.get("description") as string) || "").trim() || null,
       telephone: (formData.get("telephone") as string).trim(),
+      whatsapp_lien: whatsappLienSaisi.trim() || null,
     };
 
     try {
@@ -148,8 +154,10 @@ export default function MonProfilPage() {
 
       setFiche((prev) => (prev ? { ...prev, ...miseAJour } : null));
       setSucces(true);
-    } catch (err: any) {
-      setError(err.message || "Une erreur est survenue");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Une erreur est survenue";
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -189,6 +197,12 @@ export default function MonProfilPage() {
     );
   }
 
+  const lienApercuWhatsApp = construireLienWhatsAppArtisan({
+    whatsappLien: whatsappLienSaisi,
+    telephone: fiche.telephone,
+    nomArtisan: fiche.name ?? "Artisan BARA",
+  });
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-white rounded-2xl shadow-sm border p-6 sm:p-8">
@@ -223,17 +237,15 @@ export default function MonProfilPage() {
                 Obtenir le badge « ✓ Vérifié »
               </p>
               <p className="text-xs text-amber-800 mt-0.5">
-                Envoyez-nous une photo de votre pièce d&apos;identité ou carte professionnelle sur WhatsApp pour activer votre badge de confiance.
+                Envoyez-nous une photo de votre pièce d&apos;identité ou carte professionnelle pour activer votre badge de confiance.
               </p>
             </div>
-            <a
-              href="https://wa.me"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/contact"
               className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl text-center shrink-0 transition"
             >
               💬 Demander le badge
-            </a>
+            </Link>
           </div>
         )}
 
@@ -370,7 +382,7 @@ export default function MonProfilPage() {
 
           <div>
             <label htmlFor="telephone" className="block text-sm font-medium mb-1">
-              Numéro WhatsApp
+              Numéro de téléphone / WhatsApp
             </label>
             <input
               id="telephone"
@@ -384,6 +396,41 @@ export default function MonProfilPage() {
             />
           </div>
 
+          {/* Champ dédié : Lien issu de la conversion du QR Code WhatsApp */}
+          <div className="p-4 rounded-xl border border-green-200 bg-green-50/60 space-y-2">
+            <label
+              htmlFor="whatsapp_lien"
+              className="block text-sm font-bold text-green-950"
+            >
+              📲 Lien issu de votre QR Code WhatsApp
+            </label>
+            <input
+              id="whatsapp_lien"
+              name="whatsapp_lien"
+              type="url"
+              value={whatsappLienSaisi}
+              onChange={(e) => setWhatsappLienSaisi(e.target.value)}
+              placeholder="https://wa.me"
+              className="w-full border border-green-300 rounded-lg px-3.5 py-2.5 text-sm bg-white"
+            />
+            <p className="text-xs text-green-900 leading-relaxed">
+              <strong>Comment obtenir ce lien ?</strong> Ouvrez{" "}
+              <strong>WhatsApp → Paramètres → icône QR Code</strong> (en haut à droite) →{" "}
+              <strong>Partager → Copier le lien</strong>, puis collez-le ici.
+            </p>
+            {(whatsappLienSaisi.trim() || fiche.telephone) && (
+              <div className="pt-1">
+                <a
+                  href={lienApercuWhatsApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700 hover:text-green-800 underline"
+                >
+                  🔗 Tester mon bouton WhatsApp en direct →
+                </a>
+              </div>
+            )}
+          </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium mb-1">
               Présentation
@@ -424,6 +471,7 @@ export default function MonProfilPage() {
             {saving ? "Enregistrement…" : "Enregistrer"}
           </button>
         </form>
+
         <CarteVisiteArtisan
           id={fiche.id}
           nom={fiche.name ?? "Artisan BARA"}
