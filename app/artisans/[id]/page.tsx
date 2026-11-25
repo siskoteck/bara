@@ -50,12 +50,21 @@ function ContenuFicheArtisan() {
   const [loading, setLoading] = useState(true);
   const [erreurChargement, setErreurChargement] = useState("");
   const [photoZoom, setPhotoZoom] = useState<string | null>(null);
+  const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
 
   const [auteur, setAuteur] = useState("");
   const [note, setNote] = useState(5);
   const [commentaire, setCommentaire] = useState("");
   const [envoiAvis, setEnvoiAvis] = useState(false);
   const [messageAvis, setMessageAvis] = useState("");
+
+  useEffect(() => {
+    function surDefilement() {
+      setAfficherHeaderMobile(window.scrollY > 180);
+    }
+    window.addEventListener("scroll", surDefilement, { passive: true });
+    return () => window.removeEventListener("scroll", surDefilement);
+  }, []);
   const chargerFiche = useCallback(async () => {
     if (!id || id === "undefined" || id === "null") {
       setErreurChargement("Identifiant manquant dans l'adresse URL.");
@@ -221,49 +230,51 @@ function ContenuFicheArtisan() {
 
   return (
     <div className="pb-24 sm:pb-12">
-      {/* Header sticky mobile */}
-      <div className="sticky top-16 z-30 sm:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-sm">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {artisan.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={artisan.avatar_url}
-              alt={artisan.name}
-              className="w-9 h-9 rounded-full object-cover border border-orange-200 shrink-0"
-            />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-extrabold shrink-0">
-              {initiales}
+      {/* Header fixe mobile au défilement */}
+      {afficherHeaderMobile && (
+        <div className="fixed top-0 inset-x-0 z-50 sm:hidden bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-md">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {artisan.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={artisan.avatar_url}
+                alt={artisan.name}
+                className="w-9 h-9 rounded-full object-cover border border-orange-200 shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-extrabold shrink-0">
+                {initiales}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold text-gray-900 truncate">
+                {artisan.name}
+              </p>
+              <p className="text-[11px] text-orange-600 font-semibold truncate">
+                {artisan.metier} • {artisan.commune || "Abidjan"}
+              </p>
             </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-xs font-extrabold text-gray-900 truncate">
-              {artisan.name}
-            </p>
-            <p className="text-[11px] text-orange-600 font-semibold truncate">
-              {artisan.metier} • {artisan.commune || "Abidjan"}
-            </p>
           </div>
-        </div>
 
-        {utilisateurConnecte && lienWhatsApp ? (
-          <a
-            href={lienWhatsApp}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#25D366] hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0 shadow-sm"
-          >
-            WhatsApp
-          </a>
-        ) : (
-          <Link
-            href="/auth/login"
-            className="bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-          >
-            Contact
-          </Link>
-        )}
-      </div>
+          {utilisateurConnecte && lienWhatsApp ? (
+            <a
+              href={lienWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#25D366] hover:bg-green-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shrink-0 shadow-sm"
+            >
+              💬 WhatsApp
+            </a>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="bg-orange-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shrink-0"
+            >
+              Contact
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 pt-6 sm:pt-10 space-y-8">
         <Link
@@ -348,7 +359,6 @@ function ContenuFicheArtisan() {
                   </span>
                 )}
               </p>
-              {/* Zone de contact : visible uniquement si connecté */}
               {utilisateurConnecte ? (
                 artisan.telephone && (
                   <div className="mt-5 space-y-2">
@@ -429,7 +439,6 @@ function ContenuFicheArtisan() {
             estConnecte={utilisateurConnecte}
           />
 
-          {/* À propos */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-2">
               À propos de cet artisan
@@ -442,7 +451,6 @@ function ContenuFicheArtisan() {
             </p>
           </div>
 
-          {/* Cartes d'infos pratiques */}
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
               <p className="text-[11px] font-semibold text-gray-500">
@@ -478,7 +486,6 @@ function ContenuFicheArtisan() {
             </div>
           </div>
 
-          {/* Réalisations (Portfolio) avec zoom */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
               Réalisations ({artisan.realisations?.length || 0})
@@ -512,7 +519,6 @@ function ContenuFicheArtisan() {
             )}
           </div>
         </div>
-        {/* Section Avis clients */}
         <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
@@ -528,7 +534,7 @@ function ContenuFicheArtisan() {
 
             {avis.length > 0 && (
               <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold text-gray-600">
-                {[5, 4, 3, 2, 1].map((etoile) => {
+                {Array.of<number>(5, 4, 3, 2, 1).map((etoile) => {
                   const count = avis.filter((a) => a.note === etoile).length;
                   return (
                     <span
@@ -658,7 +664,6 @@ function ContenuFicheArtisan() {
             </div>
           )}
         </div>
-        {/* CTA final */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left">
             <h2 className="text-lg sm:text-xl font-extrabold">
@@ -695,7 +700,6 @@ function ContenuFicheArtisan() {
           </div>
         </div>
 
-        {/* Artisans similaires */}
         {similaires.length > 0 && (
           <section className="pt-4">
             <div className="flex items-center justify-between mb-4">
@@ -748,7 +752,6 @@ function ContenuFicheArtisan() {
         )}
       </div>
 
-      {/* Modal zoom photo réalisation */}
       {photoZoom && (
         <div
           onClick={() => setPhotoZoom(null)}
@@ -772,7 +775,6 @@ function ContenuFicheArtisan() {
         </div>
       )}
 
-      {/* Bouton principal fixe en bas sur mobile */}
       <div className="fixed bottom-0 inset-x-0 z-30 sm:hidden bg-white border-t border-gray-200 p-3 shadow-lg">
         {utilisateurConnecte && lienWhatsApp ? (
           <a
