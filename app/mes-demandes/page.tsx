@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -65,16 +65,16 @@ export default function MesDemandesPage() {
         setMetierArtisan(ficheArtisan.metier);
         setCommuneArtisan(ficheArtisan.commune);
 
-        const { data: opportunitÃ©s } = await supabase
+        const { data: opportunités } = await supabase
           .from("demandes")
           .select("*")
           .eq("metier", ficheArtisan.metier)
           .eq("statut", "ouverte")
           .order("created_at", { ascending: false });
 
-        if (opportunitÃ©s) {
+        if (opportunités) {
           setDemandesClients(
-            (opportunitÃ©s as Demande[]).filter((d) => d.user_id !== user.id)
+            (opportunités as Demande[]).filter((d) => d.user_id !== user.id)
           );
         }
       }
@@ -111,7 +111,7 @@ export default function MesDemandesPage() {
     const lieu = demande.quartier
       ? `${demande.commune} (${demande.quartier})`
       : demande.commune;
-    const texte = `Bonjour, je suis artisan (${demande.metier}) sur BARA. J'ai vu votre demande Ã  ${lieu} et je suis disponible pour intervenir.`;
+    const texte = `Bonjour, je suis artisan (${demande.metier}) sur BARA. J'ai vu votre demande à ${lieu} et je suis disponible pour intervenir.`;
 
     return "https://wa.me/" + chiffres + "?text=" + encodeURIComponent(texte);
   }
@@ -131,10 +131,10 @@ export default function MesDemandesPage() {
         <section>
           <div className="mb-6">
             <span className="inline-block bg-orange-100 text-orange-700 text-xs font-semibold px-3 py-1 rounded-full mb-2">
-              Espace Artisan â€¢ {metierArtisan}
+              Espace Artisan • {metierArtisan}
             </span>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Demandes de clients Ã  Abidjan ({demandesClients.length})
+              Demandes de clients à Abidjan ({demandesClients.length})
             </h1>
             <p className="text-gray-600 text-sm mt-1">
               Contactez directement les clients qui recherchent un{" "}
@@ -144,7 +144,7 @@ export default function MesDemandesPage() {
 
           {demandesClients.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-500">
-              Aucune demande ouverte pour le mÃ©tier{" "}
+              Aucune demande ouverte pour le métier{" "}
               <strong>{metierArtisan}</strong> pour le moment.
             </div>
           ) : (
@@ -161,7 +161,7 @@ export default function MesDemandesPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="bg-orange-50 text-orange-700 text-xs font-semibold px-3 py-1 rounded-full">
-                          ðŸ“ {demande.commune}
+                          📍 {demande.commune}
                           {demande.quartier ? ` (${demande.quartier})` : ""}
                         </span>
 
@@ -191,7 +191,7 @@ export default function MesDemandesPage() {
                     {demande.audio_url && (
                       <div className="mb-4 bg-orange-50/60 border border-orange-200 p-3 rounded-xl">
                         <p className="text-xs font-semibold text-orange-900 mb-1.5">
-                          ðŸŽ™ï¸ Note vocale du client :
+                          🎙️ Note vocale du client :
                         </p>
                         <audio
                           controls
@@ -230,13 +230,13 @@ export default function MesDemandesPage() {
                         rel="noopener noreferrer"
                         className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition"
                       >
-                        ðŸ’¬ RÃ©pondre sur WhatsApp
+                        💬 Répondre sur WhatsApp
                       </a>
                       <a
                         href={`tel:${demande.telephone.replace(/\s+/g, "")}`}
                         className="border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition"
                       >
-                        ðŸ“ž Appeler ({demande.telephone})
+                        📞 Appeler ({demande.telephone})
                       </a>
                     </div>
                   </div>
@@ -246,15 +246,15 @@ export default function MesDemandesPage() {
           )}
         </section>
       )}
-      {/* Section Particulier : Mes propres demandes envoyÃ©es */}
+      {/* Section Particulier : Mes propres demandes envoyées */}
       <section>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Mes demandes envoyÃ©es ({mesDemandes.length})
+              Mes demandes envoyées ({mesDemandes.length})
             </h2>
             <p className="text-gray-600 text-sm mt-1">
-              Suivez l&apos;Ã©tat de vos besoins postÃ©s sur BARA.
+              Suivez l&apos;état de vos besoins postés sur BARA.
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export default function MesDemandesPage() {
         {mesDemandes.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <p className="text-gray-600 mb-5">
-              Vous n&apos;avez pas encore postÃ© de demande de travaux ou dÃ©pannage.
+              Vous n&apos;avez pas encore posté de demande de travaux ou dépannage.
             </p>
             <Link
               href="/demande"
@@ -288,7 +288,7 @@ export default function MesDemandesPage() {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-bold text-gray-900">
-                      {demande.metier} â€¢ {demande.commune}
+                      {demande.metier} • {demande.commune}
                       {demande.quartier ? ` (${demande.quartier})` : ""}
                     </h3>
                     <span
@@ -298,7 +298,7 @@ export default function MesDemandesPage() {
                           : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {demande.statut === "ouverte" ? "Ouverte" : "TerminÃ©e"}
+                      {demande.statut === "ouverte" ? "Ouverte" : "Terminée"}
                     </span>
                   </div>
 
@@ -342,7 +342,7 @@ export default function MesDemandesPage() {
                     onClick={() => cloturerDemande(demande.id)}
                     className="px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 shrink-0"
                   >
-                    âœ“ Marquer comme rÃ©solue
+                    ✓ Marquer comme résolue
                   </button>
                 )}
               </div>
@@ -355,4 +355,3 @@ export default function MesDemandesPage() {
     </div>
   );
 }
-

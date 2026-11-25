@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -110,12 +110,12 @@ function ListeArtisansContenu() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900">
-          Annuaire des artisans Ã  Abidjan
+          Annuaire des artisans à Abidjan
         </h1>
         <p className="text-gray-600 text-sm mt-1">
           {loading
-            ? "Recherche des professionnels disponibles prÃ¨s de chez vous..."
-            : `${artisansFiltres.length} artisan(s) trouvÃ©(s) prÃ¨s de chez vous.`}
+            ? "Recherche des professionnels disponibles près de chez vous..."
+            : `${artisansFiltres.length} artisan(s) trouvé(s) près de chez vous.`}
         </p>
       </div>
 
@@ -126,7 +126,7 @@ function ListeArtisansContenu() {
             type="text"
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher un nom, un quartier (AngrÃ©, Zone 4...)"
+            placeholder="Rechercher un nom, un quartier (Angré, Zone 4...)"
             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
           />
 
@@ -135,7 +135,7 @@ function ListeArtisansContenu() {
             onChange={(e) => setFiltreMetier(e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
           >
-            <option value="Tous">Tous les mÃ©tiers</option>
+            <option value="Tous">Tous les métiers</option>
             {METIERS.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -165,7 +165,7 @@ function ListeArtisansContenu() {
               onChange={(e) => setUniquementDisponibles(e.target.checked)}
               className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <span>ðŸŸ¢ Afficher uniquement les artisans disponibles immÃ©diatement</span>
+            <span>🟢 Afficher uniquement les artisans disponibles immédiatement</span>
           </label>
 
           {(filtreMetier !== "Tous" ||
@@ -182,7 +182,7 @@ function ListeArtisansContenu() {
               }}
               className="text-xs font-semibold text-orange-600 hover:underline"
             >
-              RÃ©initialiser
+              Réinitialiser
             </button>
           )}
         </div>
@@ -198,10 +198,10 @@ function ListeArtisansContenu() {
       ) : artisansFiltres.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
           <p className="text-gray-700 font-semibold mb-2">
-            Aucun artisan ne correspond Ã  cette recherche.
+            Aucun artisan ne correspond à cette recherche.
           </p>
           <p className="text-xs text-gray-500 mb-5">
-            Essayez d&apos;Ã©largir votre recherche Ã  toute la ville d&apos;Abidjan ou postez votre besoin.
+            Essayez d&apos;élargir votre recherche à toute la ville d&apos;Abidjan ou postez votre besoin.
           </p>
           <Link
             href="/demande"
@@ -246,7 +246,7 @@ function ListeArtisansContenu() {
                       <div className="flex flex-wrap items-center gap-1.5 mb-1">
                         {artisan.verifie && (
                           <span className="bg-green-100 text-green-800 text-[11px] font-bold px-2 py-0.5 rounded-full">
-                            âœ“ VÃ©rifiÃ©
+                            ✓ Vérifié
                           </span>
                         )}
                         <span
@@ -257,8 +257,8 @@ function ListeArtisansContenu() {
                           }`}
                         >
                           {artisan.disponible !== false
-                            ? "ðŸŸ¢ Disponible"
-                            : "ðŸŸ  OccupÃ©"}
+                            ? "🟢 Disponible"
+                            : "🟠 Occupé"}
                         </span>
                       </div>
 
@@ -272,14 +272,14 @@ function ListeArtisansContenu() {
                   </div>
 
                   <p className="text-xs text-gray-600 mb-2">
-                    ðŸ“ {artisan.commune || "Abidjan"}
+                    📍 {artisan.commune || "Abidjan"}
                     {artisan.quartier ? ` (${artisan.quartier})` : ""}
                   </p>
 
                   {typeof artisan.recommandations === "number" &&
                     artisan.recommandations > 0 && (
                       <p className="text-xs text-orange-700 font-semibold mb-2">
-                        ðŸ‘ RecommandÃ© par {artisan.recommandations} habitant(s)
+                        👍 Recommandé par {artisan.recommandations} habitant(s)
                       </p>
                     )}
 
@@ -309,7 +309,7 @@ function ListeArtisansContenu() {
                         rel="noopener noreferrer"
                         className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl transition shrink-0"
                       >
-                        ðŸ’¬ WhatsApp
+                        💬 WhatsApp
                       </a>
                     )
                   ) : (
@@ -318,7 +318,7 @@ function ListeArtisansContenu() {
                       title="Connectez-vous pour contacter cet artisan"
                       className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold px-3 py-2.5 rounded-xl transition shrink-0"
                     >
-                      ðŸ”’ Contact
+                      🔒 Contact
                     </Link>
                   )}
                 </div>
@@ -344,4 +344,3 @@ export default function ArtisansPage() {
     </Suspense>
   );
 }
-
