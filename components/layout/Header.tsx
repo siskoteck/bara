@@ -15,8 +15,8 @@ function HeaderContenu() {
 
   function styleLienDesktop(href: string) {
     return estActif(href)
-      ? "bg-orange-600 text-white font-extrabold px-3.5 py-2 rounded-xl shadow-sm transition"
-      : "text-gray-700 hover:text-orange-600 hover:bg-orange-50 font-semibold px-3.5 py-2 rounded-xl transition";
+      ? "bg-orange-50 text-orange-700 font-extrabold px-3.5 py-2 rounded-xl border border-orange-200/80 transition"
+      : "text-gray-700 hover:text-orange-600 hover:bg-gray-50 font-semibold px-3.5 py-2 rounded-xl transition";
   }
 
   function styleOngletMobile(href: string) {
@@ -27,46 +27,105 @@ function HeaderContenu() {
 
   return (
     <>
-      <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-2xl font-black tracking-tight text-orange-600">
-              BARA
+      <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-2xs">
+        {/* Bandeau info supérieur (PC uniquement) */}
+        <div className="hidden lg:block bg-gray-900 text-gray-200 text-xs">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 h-8 flex items-center justify-between">
+            <p className="flex items-center gap-4">
+              <span>🇨🇮 Abidjan &amp; banlieue</span>
+              <span className="text-gray-500">•</span>
+              <span>✅ Artisans locaux vérifiés</span>
+              <span className="text-gray-500">•</span>
+              <span>💬 Contact WhatsApp direct sans intermédiaire</span>
+            </p>
+            <div className="flex items-center gap-4 font-semibold">
+              <Link
+                href="/comment-ca-marche"
+                className="hover:text-orange-400 transition"
+              >
+                Comment ça marche ?
+              </Link>
+              <Link
+                href="/conseils"
+                className="hover:text-orange-400 transition"
+              >
+                Conseils travaux
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Barre principale */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-18 flex items-center justify-between gap-4">
+          {/* Logo BARA */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <span className="w-9 h-9 rounded-xl bg-orange-600 group-hover:bg-orange-700 text-white font-black text-lg flex items-center justify-center shadow-xs transition">
+              B
             </span>
-            <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
-              Abidjan
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black tracking-tight text-gray-900">
+                BARA
+              </span>
+              <span className="text-[11px] font-extrabold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
+                Abidjan
+              </span>
+            </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1.5 text-sm">
+          {/* Navigation centrale PC */}
+          <nav
+            aria-label="Navigation principale"
+            className="hidden md:flex items-center gap-1 text-sm"
+          >
             <Link href="/" className={styleLienDesktop("/")}>
               Accueil
             </Link>
             <Link href="/artisans" className={styleLienDesktop("/artisans")}>
-              Trouver un artisan
+              Artisans
             </Link>
             <Link
-              href="/sos-urgence"
-              className={`px-3.5 py-2 rounded-xl font-extrabold transition flex items-center gap-1 ${
-                estActif("/sos-urgence")
-                  ? "bg-red-600 text-white shadow-sm ring-2 ring-red-300"
-                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-              }`}
+              href="/demandes-clients"
+              className={styleLienDesktop("/demandes-clients")}
             >
-              <span>🚨</span> SOS Urgence
+              Chantiers &amp; Demandes
             </Link>
             <Link href="/tarifs" className={styleLienDesktop("/tarifs")}>
-              Guide des tarifs
-            </Link>
-            <Link href="/demande" className={styleLienDesktop("/demande")}>
-              Poster une demande
+              Guide tarifs
             </Link>
           </nav>
 
-          <AuthButtons />
+          {/* Actions droites PC & Compte */}
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/sos-urgence"
+              className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition ${
+                estActif("/sos-urgence")
+                  ? "bg-red-600 text-white shadow-xs ring-2 ring-red-300"
+                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+              }`}
+            >
+              <span>🚨</span>
+              <span>SOS Urgence</span>
+            </Link>
+
+            <Link
+              href="/demande"
+              className={`hidden lg:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition shadow-xs ${
+                estActif("/demande")
+                  ? "bg-orange-700 text-white ring-2 ring-orange-300"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
+            >
+              <span>📋</span>
+              <span>Demander un devis</span>
+            </Link>
+
+            <AuthButtons />
+          </div>
         </div>
       </header>
 
+      {/* Barre de navigation inférieure fixe sur Mobile (inchangée) */}
       <nav
         aria-label="Navigation mobile BARA"
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
