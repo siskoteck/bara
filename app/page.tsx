@@ -103,7 +103,7 @@ export default function HomePage() {
           </form>
 
           {/* Actions rapides & confiance */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm">
+          <div className="mt-6 hidden sm:flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm">
             <Link
               href="/demande"
               className="bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold px-4 py-2 rounded-full transition"
