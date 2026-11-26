@@ -85,12 +85,9 @@ export default function DemandePage() {
 
         urlsPhotos.push(urlData.publicUrl);
       }
-    } catch (uploadErr: any) {
-      console.error("Erreur upload photo panne:", uploadErr);
-      setError(
-        "Impossible d'envoyer la photo : " +
-          (uploadErr.message || "Réessayez sans photo.")
-      );
+    } catch (uploadErr: unknown) {
+      const msg = uploadErr instanceof Error ? uploadErr.message : "Réessayez sans photo.";
+      setError("Impossible d'envoyer la photo : " + msg);
       setLoading(false);
       return;
     }
@@ -122,15 +119,12 @@ export default function DemandePage() {
           .getPublicUrl(cheminAudio);
 
         audioUrlPublic = audioData.publicUrl;
-      } catch (audioErr: any) {
-        console.error("Erreur upload note vocale:", audioErr);
-        setError(
-          "Impossible d'envoyer la note vocale : " +
-            (audioErr.message || "Réessayez.")
-        );
-        setLoading(false);
-        return;
-      }
+      } catch (audioErr: unknown) {
+      const msg = audioErr instanceof Error ? audioErr.message : "Réessayez.";
+      setError("Impossible d'envoyer la note vocale : " + msg);
+      setLoading(false);
+      return;
+    }
     }
 
     const { data: sessionData } = await supabase.auth.getSession();
