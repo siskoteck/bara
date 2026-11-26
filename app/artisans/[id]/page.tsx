@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { construireLienWhatsAppArtisan } from "@/lib/whatsapp";
 import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
 import { BoutonRecommander } from "@/components/BoutonRecommander";
+import { ArtisanCard } from "@/components/artisans/ArtisanCard";
 import {
   ProfilArtisanSkeleton,
   FallbackErreurBara,
@@ -725,38 +726,7 @@ function ContenuFicheArtisan() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {similaires.map((sim) => (
-                <Link
-                  key={sim.id}
-                  href={`/artisans/${sim.id}`}
-                  className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:border-orange-300 transition flex items-center gap-3"
-                >
-                  {sim.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={sim.avatar_url}
-                      alt={sim.name}
-                      loading="lazy"
-                      className="w-12 h-12 rounded-full object-cover border border-orange-100 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-extrabold shrink-0">
-                      {(sim.name || "A").slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-gray-900 truncate">
-                      {sim.name}
-                    </p>
-                    <p className="text-xs font-semibold text-orange-600 truncate">
-                      {sim.metier}
-                    </p>
-                    <p className="text-[11px] text-gray-500 truncate">
-                      📍 {sim.commune || "Abidjan"}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+              {similaires.map((sim) => (<ArtisanCard key={sim.id} artisan={sim} />))}
             </div>
           </section>
         )}
