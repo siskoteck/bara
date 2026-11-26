@@ -1,3 +1,4 @@
+import { BadgeVerifie } from "@/components/BadgeVerifie";
 import Link from "next/link";
 import type { Artisan } from "@/lib/types";
 import { genererLienWhatsAppArtisan } from "@/lib/utils";
@@ -45,9 +46,7 @@ export function ArtisanCard({ artisan, urgence = false }: ArtisanCardProps) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 mb-1">
               {artisan.verifie && (
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                  ✅ Vérifié
-                </span>
+                <BadgeVerifie taille="sm" />
               )}
               <span
                 className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
