@@ -8,7 +8,6 @@ import { construireLienWhatsAppArtisan } from "@/lib/whatsapp";
 import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
 import { BoutonRecommander } from "@/components/BoutonRecommander";
 import { ArtisanCard } from "@/components/artisans/ArtisanCard";
-import { AvisArtisanSection } from "@/components/artisans/AvisArtisanSection";
 import {
   ProfilArtisanSkeleton,
   FallbackErreurBara,
@@ -293,7 +292,389 @@ function ContenuFicheArtisan() {
         </Link>
 
         {/* Carte Hero / Profil principal */}
-        <AvisArtisanSection artisanId={artisan.id} artisanNom={artisan.name} avisInitiaux={avis} />
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {artisan.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={artisan.avatar_url}
+                alt={artisan.name}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-orange-100 shrink-0"
+              />
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-3xl font-extrabold shrink-0">
+                {initiales}
+              </div>
+            )}
+
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                {artisan.verifie && (
+                  <span
+                    title="Photo CNI + numéro WhatsApp confirmés"
+                    className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full cursor-help"
+                  >
+                    ✓ Identité vérifiée par BARA
+                  </span>
+                )}
+
+                {estNouveau && (
+                  <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                    ✨ Nouveau sur BARA
+                  </span>
+                )}
+
+                {estConnecte && (
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    En ligne
+                  </span>
+                )}
+
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
+                    artisan.disponible !== false
+                      ? "bg-green-50 text-green-700"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      artisan.disponible !== false
+                        ? "bg-green-500 animate-pulse"
+                        : "bg-amber-500"
+                    }`}
+                  />
+                  {artisan.disponible !== false
+                    ? "Disponible maintenant"
+                    : "Occupé – répond sous 2h"}
+                </span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                {artisan.name}
+              </h1>
+              <p className="text-orange-600 font-bold text-base sm:text-lg mt-0.5">
+                {artisan.metier}
+              </p>
+              <p className="text-gray-600 text-sm mt-1">
+                📍 {artisan.commune || "Abidjan"}
+                {artisan.quartier ? ` (${artisan.quartier})` : ""}
+                {moyenneNote && (
+                  <span className="ml-3 font-bold text-amber-600">
+                    ★ {moyenneNote}/5 ({avis.length} avis)
+                  </span>
+                )}
+              </p>
+
+              {utilisateurConnecte ? (
+                (lienWhatsApp || artisan.telephone) && (
+                  <div className="mt-5 space-y-2">
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-3">
+                      {lienWhatsApp && (
+                        <a
+                          href={lienWhatsApp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-[#25D366] hover:bg-green-600 text-white font-bold px-5 py-3 rounded-xl text-sm transition shadow-sm"
+                        >
+                          💬 Contacter sur WhatsApp
+                        </a>
+                      )}
+                      {artisan.telephone && (
+                        <a
+                          href={"tel:" + artisan.telephone.replace(/\s+/g, "")}
+                          className="border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
+                        >
+                          📞 Appeler ({artisan.telephone})
+                        </a>
+                      )}
+                      <Link
+                        href={`/demande?metier=${encodeURIComponent(
+                          artisan.metier
+                        )}&commune=${encodeURIComponent(
+                          artisan.commune || ""
+                        )}`}
+                        className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-semibold px-4 py-3 rounded-xl text-sm transition"
+                      >
+                        📋 Demander un devis
+                      </Link>
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      💡 Astuce : Dites-lui que vous venez de <strong>BARA</strong> lors de votre échange sur WhatsApp.
+                    </p>
+                  </div>
+                )
+              ) : (
+                <div className="mt-5 p-4 rounded-2xl bg-orange-50/80 border border-orange-200 text-left">
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">
+                    🔒 Numéro et WhatsApp réservés aux membres connectés
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Connectez-vous ou créez un compte gratuit en 30 secondes pour
+                    voir le numéro de <strong>{artisan.name}</strong> et le
+                    contacter directement.
+                  </p>
+                  <div className="flex flex-wrap gap-2.5 mt-3">
+                    <Link
+                      href="/auth/login"
+                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition"
+                    >
+                      Se connecter
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      className="bg-white hover:bg-orange-100/50 text-orange-700 border border-orange-300 text-xs font-semibold px-4 py-2 rounded-xl transition"
+                    >
+                      Créer un compte gratuit
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              <BoutonRecommander
+                artisanId={artisan.id}
+                commune={artisan.commune}
+                compteurInitial={artisan.recommandations ?? 0}
+              />
+            </div>
+          </div>
+          <PartageSecuriteProche
+            id={artisan.id}
+            nom={artisan.name}
+            metier={artisan.metier}
+            commune={artisan.commune}
+            quartier={artisan.quartier}
+            telephone={artisan.telephone}
+            verifie={artisan.verifie}
+            estConnecte={utilisateurConnecte}
+          />
+
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">
+              À propos de cet artisan
+            </h2>
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+              {artisan.description ||
+                `${artisan.name} intervient en tant que ${artisan.metier} à ${
+                  artisan.commune || "Abidjan"
+                }. Contactez-le directement pour expliquer votre besoin et obtenir une estimation rapide.`}
+            </p>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+              <p className="text-[11px] font-semibold text-gray-500">
+                📍 Zone principale
+              </p>
+              <p className="text-xs sm:text-sm font-extrabold text-gray-900 mt-0.5">
+                {artisan.commune || "Tout Abidjan"}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+              <p className="text-[11px] font-semibold text-gray-500">
+                💬 Estimation
+              </p>
+              <p className="text-xs sm:text-sm font-extrabold text-gray-900 mt-0.5">
+                Devis gratuit
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+              <p className="text-[11px] font-semibold text-gray-500">
+                🕒 Disponibilité
+              </p>
+              <p className="text-xs sm:text-sm font-extrabold text-gray-900 mt-0.5">
+                Lun - Sam • 7h-19h
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100">
+              <p className="text-[11px] font-semibold text-gray-500">
+                👍 Recommandations
+              </p>
+              <p className="text-xs sm:text-sm font-extrabold text-orange-600 mt-0.5">
+                {artisan.recommandations ?? 0} habitant(s)
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Réalisations ({artisan.realisations?.length || 0})
+            </h2>
+            {artisan.realisations && artisan.realisations.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {artisan.realisations.map((photo, index) => (
+                  <button
+                    key={photo + index}
+                    type="button"
+                    onClick={() => setPhotoZoom(photo)}
+                    className="group relative rounded-2xl overflow-hidden border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo}
+                      alt={`Réalisation ${index + 1} de ${artisan.name}`}
+                      loading="lazy"
+                      className="w-full h-40 object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <span className="absolute bottom-2 right-2 bg-black/65 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                      🔍 Agrandir
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs sm:text-sm text-gray-500 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                Cet artisan n&apos;a pas encore ajouté de réalisations. Contactez-le pour voir ses travaux.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Avis des clients ({avis.length})
+              </h2>
+              {moyenneNote && (
+                <p className="text-sm font-bold text-amber-600 mt-0.5">
+                  ★ {moyenneNote} / 5 de moyenne globale
+                </p>
+              )}
+            </div>
+
+            {avis.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold text-gray-600">
+                {Array.of<number>(5, 4, 3, 2, 1).map((etoile) => {
+                  const count = avis.filter((a) => a.note === etoile).length;
+                  return (
+                    <span
+                      key={etoile}
+                      className="bg-gray-100 px-2.5 py-1 rounded-full"
+                    >
+                      {etoile}★ ({count})
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <form
+            onSubmit={handleAjouterAvis}
+            className="bg-gray-50 rounded-2xl p-5 border border-gray-200 mb-8 space-y-4"
+          >
+            <h3 className="font-bold text-sm text-gray-900">
+              Laisser un avis sur {artisan.name}
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="avis-auteur"
+                  className="block text-xs font-semibold text-gray-700 mb-1"
+                >
+                  Votre nom *
+                </label>
+                <input
+                  id="avis-auteur"
+                  name="auteur"
+                  type="text"
+                  required
+                  value={auteur}
+                  onChange={(e) => setAuteur(e.target.value)}
+                  placeholder="Ex: Kouassi Jean"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="avis-note"
+                  className="block text-xs font-semibold text-gray-700 mb-1"
+                >
+                  Note sur 5 *
+                </label>
+                <select
+                  id="avis-note"
+                  name="note"
+                  value={note}
+                  onChange={(e) => setNote(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+                >
+                  <option value={5}>★★★★★ (5/5 - Excellent)</option>
+                  <option value={4}>★★★★☆ (4/5 - Très bien)</option>
+                  <option value={3}>★★★☆☆ (3/5 - Correct)</option>
+                  <option value={2}>★★☆☆☆ (2/5 - Moyen)</option>
+                  <option value={1}>★☆☆☆☆ (1/5 - Décevant)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="avis-commentaire"
+                className="block text-xs font-semibold text-gray-700 mb-1"
+              >
+                Votre commentaire (optionnel)
+              </label>
+              <textarea
+                id="avis-commentaire"
+                name="commentaire"
+                rows={3}
+                value={commentaire}
+                onChange={(e) => setCommentaire(e.target.value)}
+                placeholder="Ponctualité, qualité du travail, tarif..."
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm bg-white"
+              />
+            </div>
+
+            {messageAvis && (
+              <p className="text-xs font-semibold text-green-700">
+                {messageAvis}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={envoiAvis}
+              className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+            >
+              {envoiAvis ? "Publication..." : "Publier mon avis"}
+            </button>
+          </form>
+
+          {avis.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-6">
+              Soyez le premier à laisser un avis après votre chantier.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {avis.map((item) => (
+                <div
+                  key={item.id}
+                  className="border-b border-gray-100 pb-4 last:border-none"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-sm text-gray-900">
+                      {item.auteur}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(item.created_at).toLocaleDateString("fr-FR")}
+                    </span>
+                  </div>
+                  <p className="text-amber-500 text-xs mb-1">
+                    {"★".repeat(item.note)}
+                    {"☆".repeat(5 - item.note)}
+                  </p>
+                  {item.commentaire && (
+                    <p className="text-gray-700 text-sm">{item.commentaire}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left">
             <h2 className="text-lg sm:text-xl font-extrabold">
