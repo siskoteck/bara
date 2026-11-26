@@ -12,22 +12,36 @@ import {
 } from "@/components/shared/BaraSkeletons";
 import type { Artisan } from "@/lib/types";
 
+function normaliserTexte(texte: string): string {
+  return texte
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function ListeArtisansContenu() {
   const searchParams = useSearchParams();
+  const metierUrl = searchParams.get("metier") || "Tous";
+  const communeUrl = searchParams.get("commune") || "Toutes";
 
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erreurChargement, setErreurChargement] = useState(false);
 
-  const [filtreMetier, setFiltreMetier] = useState(
-    searchParams.get("metier") || "Tous"
-  );
-  const [filtreCommune, setFiltreCommune] = useState(
-    searchParams.get("commune") || "Toutes"
-  );
+  const [filtreMetier, setFiltreMetier] = useState(metierUrl);
+  const [filtreCommune, setFiltreCommune] = useState(communeUrl);
   const [recherche, setRecherche] = useState("");
   const [uniquementDisponibles, setUniquementDisponibles] = useState(false);
+
+  useEffect(() => {
+    setFiltreMetier(metierUrl);
+  }, [metierUrl]);
+
+  useEffect(() => {
+    setFiltreCommune(communeUrl);
+  }, [communeUrl]);
 
   const chargerDonnees = useCallback(async () => {
     setLoading(true);
@@ -60,21 +74,23 @@ function ListeArtisansContenu() {
   const artisansFiltres = artisans.filter((a) => {
     const matchMetier =
       filtreMetier === "Tous" ||
-      (a.metier || "").toLowerCase() === filtreMetier.toLowerCase();
+      normaliserTexte(a.metier || "").includes(normaliserTexte(filtreMetier));
 
     const matchCommune =
       filtreCommune === "Toutes" ||
-      (a.commune || "").toLowerCase() === filtreCommune.toLowerCase();
+      normaliserTexte(a.commune || "") === normaliserTexte(filtreCommune) ||
+      normaliserTexte(a.quartier || "").includes(normaliserTexte(filtreCommune));
 
     const matchDispo = !uniquementDisponibles || a.disponible !== false;
 
-    const terme = recherche.trim().toLowerCase();
+    const terme = normaliserTexte(recherche);
     const matchRecherche =
       !terme ||
-      (a.name || "").toLowerCase().includes(terme) ||
-      (a.metier || "").toLowerCase().includes(terme) ||
-      (a.quartier || "").toLowerCase().includes(terme) ||
-      (a.description || "").toLowerCase().includes(terme);
+      normaliserTexte(a.name || "").includes(terme) ||
+      normaliserTexte(a.metier || "").includes(terme) ||
+      normaliserTexte(a.commune || "").includes(terme) ||
+      normaliserTexte(a.quartier || "").includes(terme) ||
+      normaliserTexte(a.description || "").includes(terme);
 
     return matchMetier && matchCommune && matchDispo && matchRecherche;
   });
@@ -96,7 +112,9 @@ function ListeArtisansContenu() {
           <p className="text-gray-600 text-sm mt-1">
             {loading
               ? "Recherche des professionnels disponibles près de chez vous..."
-              : `${artisansFiltres.length} artisan(s) trouvé(s) près de chez vous.`}
+              : `${artisansFiltres.length} artisan(s) trouvé(s)${
+                  filtreCommune !== "Toutes" ? ` à ${filtreCommune}` : " près de chez vous"
+                }.`}
           </p>
         </div>
 
