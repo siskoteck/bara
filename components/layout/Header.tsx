@@ -15,8 +15,8 @@ function HeaderContenu() {
 
   function styleLienDesktop(href: string) {
     return estActif(href)
-      ? "bg-orange-50 text-orange-700 font-extrabold px-3.5 py-2 rounded-xl border border-orange-200/80 transition"
-      : "text-gray-700 hover:text-orange-600 hover:bg-gray-50 font-semibold px-3.5 py-2 rounded-xl transition";
+      ? "bg-orange-50 text-orange-700 font-extrabold px-3 py-2 rounded-xl transition"
+      : "text-gray-700 hover:text-orange-600 hover:bg-gray-50 font-semibold px-3 py-2 rounded-xl transition whitespace-nowrap";
   }
 
   function styleOngletMobile(href: string) {
@@ -27,19 +27,17 @@ function HeaderContenu() {
 
   return (
     <>
-      <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Logo texte BARA Abidjan */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <span className="text-2xl font-black tracking-tight text-orange-600">
               BARA
             </span>
-            <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
+            <span className="text-[11px] font-extrabold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
               Abidjan
             </span>
           </Link>
 
-          {/* Navigation centrale PC */}
           <nav
             aria-label="Navigation principale"
             className="hidden md:flex items-center gap-1 text-sm"
@@ -54,45 +52,28 @@ function HeaderContenu() {
               href="/demandes-clients"
               className={styleLienDesktop("/demandes-clients")}
             >
-              Chantiers &amp; Demandes
+              Chantiers
             </Link>
             <Link href="/tarifs" className={styleLienDesktop("/tarifs")}>
-              Guide tarifs
+              Tarifs
             </Link>
-          </nav>
-
-          {/* Actions droites PC & Compte */}
-          <div className="flex items-center gap-2.5">
             <Link
               href="/sos-urgence"
-              className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition ${
+              className={`ml-1 inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-extrabold transition whitespace-nowrap ${
                 estActif("/sos-urgence")
-                  ? "bg-red-600 text-white shadow-xs ring-2 ring-red-300"
-                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                  ? "bg-red-600 text-white shadow-xs"
+                  : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/80"
               }`}
             >
               <span>🚨</span>
-              <span>SOS Urgence</span>
+              <span>SOS</span>
             </Link>
+          </nav>
 
-            <Link
-              href="/demande"
-              className={`hidden lg:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition shadow-xs ${
-                estActif("/demande")
-                  ? "bg-orange-700 text-white ring-2 ring-orange-300"
-                  : "bg-orange-600 hover:bg-orange-700 text-white"
-              }`}
-            >
-              <span>📋</span>
-              <span>Demander un devis</span>
-            </Link>
-
-            <AuthButtons />
-          </div>
+          <AuthButtons />
         </div>
       </header>
 
-      {/* Barre de navigation inférieure fixe sur Mobile */}
       <nav
         aria-label="Navigation mobile BARA"
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
