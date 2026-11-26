@@ -134,7 +134,6 @@ function ContenuFicheArtisan() {
   }, [id]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
     chargerFiche();
   }, [chargerFiche]);
 
