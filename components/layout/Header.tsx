@@ -28,48 +28,15 @@ function HeaderContenu() {
   return (
     <>
       <header className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 shadow-2xs">
-        {/* Bandeau info supérieur (PC uniquement) */}
-        <div className="hidden lg:block bg-gray-900 text-gray-200 text-xs">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 h-8 flex items-center justify-between">
-            <p className="flex items-center gap-4">
-              <span>🇨🇮 Abidjan &amp; banlieue</span>
-              <span className="text-gray-500">•</span>
-              <span>✅ Artisans locaux vérifiés</span>
-              <span className="text-gray-500">•</span>
-              <span>💬 Contact WhatsApp direct sans intermédiaire</span>
-            </p>
-            <div className="flex items-center gap-4 font-semibold">
-              <Link
-                href="/comment-ca-marche"
-                className="hover:text-orange-400 transition"
-              >
-                Comment ça marche ?
-              </Link>
-              <Link
-                href="/conseils"
-                className="hover:text-orange-400 transition"
-              >
-                Conseils travaux
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Barre principale */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-18 flex items-center justify-between gap-4">
-          {/* Logo BARA */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <span className="w-9 h-9 rounded-xl bg-orange-600 group-hover:bg-orange-700 text-white font-black text-lg flex items-center justify-center shadow-xs transition">
-              B
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          {/* Logo texte BARA Abidjan */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <span className="text-2xl font-black tracking-tight text-orange-600">
+              BARA
             </span>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-black tracking-tight text-gray-900">
-                BARA
-              </span>
-              <span className="text-[11px] font-extrabold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
-                Abidjan
-              </span>
-            </div>
+            <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full">
+              Abidjan
+            </span>
           </Link>
 
           {/* Navigation centrale PC */}
@@ -125,7 +92,7 @@ function HeaderContenu() {
         </div>
       </header>
 
-      {/* Barre de navigation inférieure fixe sur Mobile (inchangée) */}
+      {/* Barre de navigation inférieure fixe sur Mobile */}
       <nav
         aria-label="Navigation mobile BARA"
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
