@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ChangerMotDePasse } from "@/components/ChangerMotDePasse";
+import { AdminBannieresTab } from "@/components/admin/AdminBannieresTab";
 
 const EMAIL_ADMIN =
   process.env.NEXT_PUBLIC_ADMIN_EMAIL || "cv2tcv2t@gmail.com";
@@ -446,141 +447,9 @@ export default function AdminPage() {
         </div>
       )}
       {onglet === "bannieres" && (
-        <div className="space-y-6">
-          {/* Formulaire d'ajout d'une bannière */}
-          <form
-            onSubmit={handleAjouterBanniere}
-            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4"
-          >
-            <h2 className="text-lg font-bold text-gray-900">
-              ➕ Publier une nouvelle bannière publicitaire
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Titre de l&apos;annonce *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={titreBan}
-                  onChange={(e) => setTitreBan(e.target.value)}
-                  placeholder="Ex: Quincaillerie Abidjan -15% sur la peinture"
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Lien de redirection (optionnel)
-                </label>
-                <input
-                  type="url"
-                  value={lienBan}
-                  onChange={(e) => setLienBan(e.target.value)}
-                  placeholder="https://wa.me..."
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Description courte (optionnel)
-                </label>
-                <input
-                  type="text"
-                  value={descBan}
-                  onChange={(e) => setDescBan(e.target.value)}
-                  placeholder="Livraison rapide dans toutes les communes..."
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  URL de l&apos;image (optionnel)
-                </label>
-                <input
-                  type="url"
-                  value={imageBan}
-                  onChange={(e) => setImageBan(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={ajoutBan}
-              className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
-            >
-              {ajoutBan ? "Publication..." : "Publier la bannière"}
-            </button>
-          </form>
-
-          {/* Liste des bannières existantes */}
-          <div className="space-y-3">
-            {bannieres.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                Aucune bannière publiée pour le moment.
-              </p>
-            ) : (
-              bannieres.map((b) => (
-                <div
-                  key={b.id}
-                  className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                          b.actif
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {b.actif ? "🟢 Active" : "⚪ Masquée"}
-                      </span>
-                      <h3 className="font-bold text-gray-900">{b.titre}</h3>
-                    </div>
-                    {b.description && (
-                      <p className="text-xs text-gray-600">{b.description}</p>
-                    )}
-                    {b.lien && (
-                      <p className="text-xs text-blue-600 truncate mt-1">
-                        {b.lien}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleBanniereActif(b.id, b.actif)}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50"
-                    >
-                      {b.actif ? "Masquer" : "Activer"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => supprimerBanniere(b.id)}
-                      className="text-xs font-bold text-red-600 hover:underline"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <AdminBannieresTab bannieres={bannieres} setBannieres={setBannieres} />
       )}
 
-      {/* Bloc changement de mot de passe administrateur */}
       <ChangerMotDePasse />
     </div>
   );
