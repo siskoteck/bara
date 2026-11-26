@@ -34,7 +34,7 @@ export default function AuthButtons() {
       }
 
       setConnecte(true);
-      setNom(user.user_metadata?.nom ?? user.email?.split("@") ?? "Mon compte");
+      setNom(user.user_metadata?.nom ?? user.email?.split("@")[0] ?? "Mon compte");
       setEstAdmin(user.email?.toLowerCase() === ADMIN_EMAIL);
 
       let isArtisan = user.user_metadata?.type_compte === "artisan";
