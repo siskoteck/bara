@@ -53,7 +53,7 @@ export function AssistantIABara() {
   }
   if (cache) {
     return (
-      <div className="fixed bottom-16 left-3 sm:bottom-6 sm:left-4 z-40">
+      <div className="fixed bottom-20 left-3 sm:bottom-6 sm:left-4 z-40">
         <button
           type="button"
           onClick={() => setCache(false)}
@@ -68,7 +68,7 @@ export function AssistantIABara() {
   }
 
   return (
-    <div className="fixed bottom-16 left-4 sm:bottom-6 sm:left-6 z-40">
+    <div className="fixed bottom-20 left-4 sm:bottom-6 sm:left-6 z-40">
       {ouvert ? (
         <div className="w-[330px] sm:w-[370px] bg-white/85 backdrop-blur-md rounded-3xl border border-orange-200/80 shadow-2xl overflow-hidden flex flex-col">
           <div className="bg-orange-600/90 backdrop-blur-md text-white px-4 py-3.5 flex items-center justify-between">
