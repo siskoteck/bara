@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { compresserImage } from "@/lib/compressionImage";
 import { EnregistreurVocal } from "@/components/EnregistreurVocal";
+import { validerNumeroTelephoneCI, validerFichierMedia } from "@/lib/validation";
 
 export default function DemandePage() {
   const [envoye, setEnvoye] = useState(false);
