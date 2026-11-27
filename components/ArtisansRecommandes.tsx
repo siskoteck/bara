@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MapPin, Star, BadgeCheck, Lock, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { genererLienWhatsApp } from "@/lib/whatsapp";
 
@@ -21,23 +22,41 @@ interface Artisan {
 
 export function ArtisansRecommandes() {
   const [artisans, setArtisans] = useState<Artisan[]>([]);
+  const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function chargerArtisans() {
-      const { data, error } = await supabase
-        .from("artisans")
-        .select("*")
-        .order("verifie", { ascending: false })
-        .limit(6);
+    let actif = true;
 
-      if (!error && data) {
-        setArtisans(data);
+    async function chargerArtisans() {
+      const [resSession, resArtisans] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase
+          .from("artisans")
+          .select("*")
+          .order("verifie", { ascending: false })
+          .limit(6),
+      ]);
+
+      if (!actif) return;
+
+      setUtilisateurConnecte(Boolean(resSession.data.session?.user));
+      if (!resArtisans.error && resArtisans.data) {
+        setArtisans(resArtisans.data);
       }
       setLoading(false);
     }
 
     chargerArtisans();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (actif) setUtilisateurConnecte(Boolean(session?.user));
+    });
+
+    return () => {
+      actif = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
@@ -68,7 +87,7 @@ export function ArtisansRecommandes() {
           </div>
           <Link
             href="/artisans"
-            className="text-orange-600 font-medium hover:underline text-sm"
+            className="text-orange-700 font-bold hover:underline text-sm"
           >
             Voir tout l&apos;annuaire →
           </Link>
@@ -109,13 +128,16 @@ export function ArtisansRecommandes() {
                       <h3 className="font-bold text-lg text-gray-900">
                         {artisan.name}
                       </h3>
-                      <p className="text-orange-600 font-medium text-sm">
+                      <p className="text-orange-700 font-semibold text-sm">
                         {artisan.metier}
                       </p>
                       {artisan.commune && (
-                        <p className="text-gray-500 text-xs mt-0.5">
-                          📍 {artisan.commune}
-                          {artisan.quartier ? ` (${artisan.quartier})` : ""}
+                        <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span>
+                            {artisan.commune}
+                            {artisan.quartier ? ` (${artisan.quartier})` : ""}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -125,7 +147,10 @@ export function ArtisansRecommandes() {
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     {artisan.note ? (
                       <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 border border-yellow-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ★ {artisan.note} ({artisan.avis ?? 0})
+                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                        <span>
+                          {artisan.note} ({artisan.avis ?? 0})
+                        </span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">
@@ -135,13 +160,15 @@ export function ArtisansRecommandes() {
 
                     {artisan.verifie && (
                       <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                        ✓ Vérifié
+                        <BadgeCheck className="w-3.5 h-3.5" />
+                        <span>Vérifié</span>
                       </span>
                     )}
 
                     {artisan.disponible !== false && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                        🟢 Disponible
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span>Disponible</span>
                       </span>
                     )}
                   </div>
@@ -154,20 +181,31 @@ export function ArtisansRecommandes() {
                   >
                     Voir le profil
                   </Link>
-                  {artisan.telephone && (
-                    <a
-                      href={genererLienWhatsApp(
-                        artisan.telephone,
-                        artisan.name,
-                        artisan.metier,
-                        artisan.commune
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-center py-2.5 px-3 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition"
+
+                  {utilisateurConnecte ? (
+                    artisan.telephone && (
+                      <a
+                        href={genererLienWhatsApp(
+                          artisan.telephone,
+                          artisan.name,
+                          `Bonjour ${artisan.name}, j'ai vu votre profil (${artisan.metier}) sur BARA Abidjan et j'aimerais vous contacter pour un travail.`
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>WhatsApp</span>
+                      </a>
+                    )
+                  ) : (
+                    <Link
+                      href={`/auth/login?redirect=/artisans/${artisan.id}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition"
                     >
-                      WhatsApp
-                    </a>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Se connecter</span>
+                    </Link>
                   )}
                 </div>
               </div>
