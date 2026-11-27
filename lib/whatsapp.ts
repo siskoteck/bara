@@ -1,23 +1,25 @@
 export function construireLienWhatsAppArtisan(options: {
   whatsappLien?: string | null;
   telephone?: string | null;
-  nomArtisan: string;
+  nomArtisan?: string;
   messagePersonnalise?: string;
 }): string {
-  const { whatsappLien, telephone, nomArtisan, messagePersonnalise } = options;
+  const { whatsappLien, telephone } = options;
 
-  const lienQr = (whatsappLien || "").trim();
-  if (lienQr && !lienQr.includes("wa.me/qr/") && !lienQr.includes("{chiffres}")) {
-    if (lienQr.startsWith("http://") || lienQr.startsWith("https://")) {
-      return lienQr;
-    }
-    if (lienQr.startsWith("wa.me/")) {
-      return "https://" + lienQr;
-    }
+  const lienExistant = (whatsappLien || "").trim();
+  if (
+    lienExistant &&
+    !lienExistant.includes("wa.me/qr/") &&
+    !lienExistant.includes("{chiffres}") &&
+    (lienExistant.startsWith("https://wa.me/225") || lienExistant.startsWith("http://wa.me"))
+  ) {
+    return lienExistant.split("?")[0];
   }
 
   let chiffres = (telephone || "").replace(/\D/g, "");
   if (chiffres.length === 10 && chiffres.startsWith("0")) {
+    chiffres = "225" + chiffres;
+  } else if (chiffres.length === 8) {
     chiffres = "225" + chiffres;
   } else if (chiffres.startsWith("00225")) {
     chiffres = chiffres.slice(2);
@@ -25,14 +27,7 @@ export function construireLienWhatsAppArtisan(options: {
 
   if (!chiffres) return "";
 
-  const brut =
-    messagePersonnalise ||
-    "Bonjour " +
-      nomArtisan +
-      ", je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.";
-  const propre = brut.replace(/[()]/g, "");
-
-  return "https://wa.me" + chiffres + "?text=" + encodeURIComponent(propre);
+  return "https://wa.me/" + chiffres;
 }
 
 export function genererLienWhatsApp(
@@ -44,7 +39,7 @@ export function genererLienWhatsApp(
   return construireLienWhatsAppArtisan({
     whatsappLien,
     telephone,
-    nomArtisan: nomArtisan || "l'artisan",
+    nomArtisan,
     messagePersonnalise,
   });
 }
