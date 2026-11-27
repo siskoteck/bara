@@ -1,14 +1,14 @@
-export function construireLienWhatsAppArtisan(options: {
-  whatsappLien?: string | null;
-  telephone?: string | null;
-  nomArtisan: string;
-  messagePersonnalise?: string;
-}): string {
+export function construireLienWhatsAppArtisan(options) {
   const { whatsappLien, telephone, nomArtisan, messagePersonnalise } = options;
 
   const lienQr = (whatsappLien || "").trim();
-  if (lienQr && (lienQr.startsWith("http://") || lienQr.startsWith("https://") || lienQr.startsWith("wa.me/"))) {
-    return lienQr.startsWith("wa.me/") ? `https://${lienQr}` : lienQr;
+  if (lienQr && !lienQr.includes("wa.me/qr/") && !lienQr.includes("{chiffres}")) {
+    if (lienQr.startsWith("http://") || lienQr.startsWith("https://")) {
+      return lienQr;
+    }
+    if (lienQr.startsWith("wa.me/")) {
+      return "https://" + lienQr;
+    }
   }
 
   let chiffres = (telephone || "").replace(/\D/g, "");
@@ -20,20 +20,13 @@ export function construireLienWhatsAppArtisan(options: {
 
   if (!chiffres) return "";
 
-  const texte = encodeURIComponent(
-    messagePersonnalise ||
-      `Bonjour ${nomArtisan}, je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.`
-  );
+  const brut = messagePersonnalise || ("Bonjour " + nomArtisan + ", je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.");
+  const propre = brut.replace(/[()]/g, "");
 
-  return `https://wa.me{chiffres}?text=${texte}`;
+  return "https://wa.me" + chiffres + "?text=" + encodeURIComponent(propre);
 }
 
-export function genererLienWhatsApp(
-  telephone: string | null | undefined,
-  nomArtisan?: string,
-  messagePersonnalise?: string,
-  whatsappLien?: string | null
-): string {
+export function genererLienWhatsApp(telephone, nomArtisan, messagePersonnalise, whatsappLien) {
   return construireLienWhatsAppArtisan({
     whatsappLien,
     telephone,
