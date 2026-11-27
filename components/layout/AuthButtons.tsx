@@ -5,10 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_EMAIL = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAIL || "cv2tcv2t@gmail.com"
-).toLowerCase();
-
 export default function AuthButtons() {
   const router = useRouter();
   const pathname = usePathname() || "/";
@@ -21,7 +17,7 @@ export default function AuthButtons() {
   useEffect(() => {
     async function appliquer(
       user:
-        | { id: string; email?: string; user_metadata?: Record<string, string> }
+        | { id: string; email?: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, string> }
         | undefined
         | null
     ) {
@@ -35,9 +31,15 @@ export default function AuthButtons() {
 
       setConnecte(true);
       setNom(user.user_metadata?.nom ?? user.email?.split("@").at(0) ?? "Mon compte");
-      setEstAdmin(user.email?.toLowerCase() === ADMIN_EMAIL);
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      let isArtisan = user.user_metadata?.type_compte === "artisan";
+      const roleSecurise = (user.app_metadata?.role as string) || roleData?.role || "client";
+      setEstAdmin(roleSecurise === "admin");
+      let isArtisan = roleSecurise === "artisan";
 
       const { data: fiche } = await supabase
         .from("artisans")

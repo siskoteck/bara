@@ -6,9 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { ChangerMotDePasse } from "@/components/ChangerMotDePasse";
 import { AdminBannieresTab } from "@/components/admin/AdminBannieresTab";
 
-const EMAIL_ADMIN =
-  process.env.NEXT_PUBLIC_ADMIN_EMAIL || "cv2tcv2t@gmail.com";
-
 interface ArtisanAdmin {
   id: string;
   name: string;
@@ -68,8 +65,23 @@ export default function AdminPage() {
       const { data } = await supabase.auth.getSession();
       const user = data.session?.user;
 
-      if (!user || user.email?.toLowerCase() !== EMAIL_ADMIN.toLowerCase()) {
-        router.replace("/auth/login");
+      if (!user) {
+        router.replace("/auth/login?redirect=/admin");
+        return;
+      }
+
+      let estAdmin = user.app_metadata?.role === "admin";
+      if (!estAdmin) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        estAdmin = roleRow?.role === "admin";
+      }
+
+      if (!estAdmin) {
+        router.replace("/");
         return;
       }
 

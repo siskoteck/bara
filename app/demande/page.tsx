@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { compresserImage } from "@/lib/compressionImage";
 import { EnregistreurVocal } from "@/components/EnregistreurVocal";
+import Captcha, { CAPTCHA_ACTIF } from "@/components/Captcha";
 import { validerNumeroTelephoneCI, validerFichierMedia } from "@/lib/validation";
 
 export default function DemandePage() {
@@ -17,6 +18,7 @@ export default function DemandePage() {
   const [fichiersPhotos, setFichiersPhotos] = useState<File[]>([]);
   const [apercusPhotos, setApercusPhotos] = useState<string[]>([]);
   const [fichierAudio, setFichierAudio] = useState<File | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const suggestionsQuartiers = communeChoisie
     ? QUARTIERS_PAR_COMMUNE[communeChoisie] || []
