@@ -1,14 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="min-h-[65vh] flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full bg-white rounded-3xl border border-red-200 p-8 text-center shadow-xs space-y-5">
@@ -19,7 +26,7 @@ export default function GlobalError({
           Une erreur temporaire est survenue
         </h1>
         <p className="text-sm text-gray-600">
-          Vérifiez votre connexion internet et réessayez l&apos;opération.
+          Notre équipe technique a été alertée. Vérifiez votre connexion internet et réessayez.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
           <button
