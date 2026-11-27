@@ -3,8 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  PhoneCall, Siren, ShieldAlert,
-  Flame, HeartPulse, Zap, Droplets,
+  PhoneCall,
+  Siren,
+  ShieldAlert,
+  Flame,
+  HeartPulse,
+  Zap,
+  Droplets,
 } from "lucide-react";
 import { COMMUNES } from "@/lib/constantes";
 import { ArtisanCard } from "@/components/artisans/ArtisanCard";
@@ -21,6 +26,7 @@ const NUMEROS_URGENCE_OFFICIELS = [
 const METIERS_URGENCE = [
   "Tous", "Plombier", "Électricien", "Climatisation / Froid", "Serrurier", "Mécanicien auto",
 ];
+
 export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artisan[] }) {
   const [commune, setCommune] = useState("Toutes");
   const [metier, setMetier] = useState("Tous");
@@ -34,22 +40,17 @@ export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artis
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
       <div className="bg-red-600 text-white rounded-3xl p-6 sm:p-8 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div>
-            <span className="inline-flex items-center gap-1.5 bg-white/20 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
-              <Siren className="w-4 h-4" />
-              <span>DÉPANNAGE RAPIDE À ABIDJAN</span>
-            </span>
-            <h1 className="text-2xl sm:text-4xl font-black">SOS Urgence Artisan — Intervention immédiate</h1>
-            <p className="text-red-100 text-xs sm:text-sm mt-2 max-w-2xl">
-              Fuite d&apos;eau, coupure électrique, panne de climatisation ou porte bloquée : contactez directement un artisan disponible ou demandez une assistance prioritaire sur WhatsApp.
-            </p>
-          </div>
-          <a href="https://wa.me" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-green-600 text-white font-black text-sm sm:text-base px-6 py-4 rounded-2xl shadow-lg transition shrink-0">
-            <MessageCircle className="w-6 h-6" />
-            <span>SOS WhatsApp BARA Direct</span>
-          </a>
-        </div>
+        <span className="inline-flex items-center gap-1.5 bg-white/20 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
+          <Siren className="w-4 h-4" />
+          <span>DÉPANNAGE RAPIDE À ABIDJAN</span>
+        </span>
+        <h1 className="text-2xl sm:text-4xl font-black">
+          SOS Urgence Artisan — Intervention immédiate
+        </h1>
+        <p className="text-red-100 text-xs sm:text-sm mt-2 max-w-2xl">
+          Fuite d&apos;eau, coupure électrique, panne de climatisation ou porte bloquée : contactez directement un artisan disponible près de chez vous sur WhatsApp.
+        </p>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 max-w-2xl">
           <select aria-label="Choisir la commune d'intervention" value={commune} onChange={(e) => setCommune(e.target.value)} className="bg-white text-gray-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
             <option value="Toutes">Toutes les communes d&apos;Abidjan</option>
@@ -59,7 +60,9 @@ export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artis
             {METIERS_URGENCE.map((m) => (<option key={m} value={m}>{m === "Tous" ? "Tous les dépannages urgents" : m}</option>))}
           </select>
         </div>
-      </div>      <section aria-label="Numéros d'urgence officiels en Côte d'Ivoire" className="bg-white rounded-3xl border border-red-200 p-5 sm:p-6 shadow-xs">
+      </div>
+
+      <section aria-label="Numéros d'urgence officiels en Côte d'Ivoire" className="bg-white rounded-3xl border border-red-200 p-5 sm:p-6 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
             <PhoneCall className="w-5 h-5 text-red-600" />
@@ -80,6 +83,7 @@ export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artis
           ))}
         </div>
       </section>
+
       {artisansUrgence.length === 0 ? (
         <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center">
           <p className="text-lg font-extrabold text-gray-900 mb-2">Aucun artisan disponible trouvé pour ce filtre précis</p>
