@@ -20,5 +20,5 @@ export function genererLienWhatsAppArtisan(
     messagePerso ||
       `Bonjour ${nomArtisan}, j'ai vu votre profil sur BARA Abidjan et j'aimerais vous contacter pour un travail.`
   );
-  return `https://wa.me${chiffres}?text=${texte}`;
+  return `https://wa.me{chiffres}?text=${texte}`;
 }
