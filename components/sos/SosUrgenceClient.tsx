@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   PhoneCall,
+  MessageCircle,
   Siren,
   ShieldAlert,
   Flame,
@@ -40,7 +41,9 @@ export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artis
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
       <div className="bg-red-600 text-white rounded-3xl p-6 sm:p-8 shadow-sm">
-        <span className="inline-flex items-center gap-1.5 bg-white/20 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <span className="inline-flex items-center gap-1.5 bg-white/20 text-xs font-extrabold px-3 py-1 rounded-full mb-2">
           <Siren className="w-4 h-4" />
           <span>DÉPANNAGE RAPIDE À ABIDJAN</span>
         </span>
@@ -49,7 +52,13 @@ export function SosUrgenceClient({ artisansInitiaux }: { artisansInitiaux: Artis
         </h1>
         <p className="text-red-100 text-xs sm:text-sm mt-2 max-w-2xl">
           Fuite d&apos;eau, coupure électrique, panne de climatisation ou porte bloquée : contactez directement un artisan disponible près de chez vous sur WhatsApp.
-        </p>
+            </p>
+          </div>
+          <a href="https://wa.me" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-green-600 text-white font-black text-sm sm:text-base px-6 py-4 rounded-2xl shadow-lg transition shrink-0">
+            <MessageCircle className="w-6 h-6" />
+            <span>SOS WhatsApp BARA Direct</span>
+          </a>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 max-w-2xl">
           <select aria-label="Choisir la commune d'intervention" value={commune} onChange={(e) => setCommune(e.target.value)} className="bg-white text-gray-900 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
