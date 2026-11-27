@@ -93,7 +93,8 @@ export default function MotDePasseOubliePage() {
                 Les comptes créés avec un numéro de téléphone ne peuvent pas recevoir
                 d'e-mail.{" "}
                 <a
-                  href={`https://whatsapp.com"_blank"
+                  href={`https://wa.me/${WHATSAPP_SUPPORT}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium underline"
                 >
