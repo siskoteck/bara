@@ -24,7 +24,7 @@ export function BoutonWhatsAppSupport() {
 
   return (
     <a
-      href="https://wa.meBonjour%20BARA%20Abidjan,%20j%27ai%20besoin%20d%27assistance."
+      href="https://wa.me"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contacter le support BARA sur WhatsApp"
