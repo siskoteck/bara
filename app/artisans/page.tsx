@@ -4,9 +4,8 @@ import { AnnuaireArtisansClient } from "@/components/artisans/AnnuaireArtisansCl
 import { GrilleArtisansSkeleton } from "@/components/shared/BaraSkeletons";
 import type { Artisan } from "@/lib/types";
 
-export const revalidate = 60;
-
 async function chargerArtisansServeur(): Promise<Artisan[]> {
+  "use cache";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return [];
