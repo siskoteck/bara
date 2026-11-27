@@ -1,5 +1,6 @@
 export function formaterNumeroCI(tel: string | null | undefined): string {
-  let chiffres = (tel || "").replace(/\D/g, "");
+  if (!tel) return "";
+  let chiffres = tel.replace(/\D/g, "");
   if (chiffres.length === 10 && chiffres.startsWith("0")) {
     chiffres = "225" + chiffres;
   } else if (chiffres.startsWith("00225")) {
@@ -14,9 +15,10 @@ export function genererLienWhatsAppArtisan(
   messagePerso?: string
 ): string {
   const chiffres = formaterNumeroCI(tel);
+  if (!chiffres) return "";
   const texte = encodeURIComponent(
     messagePerso ||
       `Bonjour ${nomArtisan}, j'ai vu votre profil sur BARA Abidjan et j'aimerais vous contacter pour un travail.`
   );
-  return `https://wa.me{chiffres}?text=${texte}`;
+  return `https://wa.me${chiffres}?text=${texte}`;
 }

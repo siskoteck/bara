@@ -6,9 +6,8 @@ export function construireLienWhatsAppArtisan(options: {
 }): string {
   const { whatsappLien, telephone, nomArtisan, messagePersonnalise } = options;
 
-  // 1. Priorité absolue au lien issu de la conversion du QR Code WhatsApp
   const lienQr = (whatsappLien || "").trim();
-  if (lienQr) {
+  if (lienQr && !lienQr.includes("wa.me/qr/")) {
     if (lienQr.startsWith("http://") || lienQr.startsWith("https://")) {
       return lienQr;
     }
@@ -18,7 +17,6 @@ export function construireLienWhatsAppArtisan(options: {
     return "https://wa.me" + lienQr.replace(/^\/+/, "");
   }
 
-  // 2. Repli automatique sur le numéro Côte d'Ivoire (+225)
   let chiffres = (telephone || "").replace(/\D/g, "");
   if (chiffres.length === 10 && chiffres.startsWith("0")) {
     chiffres = "225" + chiffres;
@@ -26,12 +24,14 @@ export function construireLienWhatsAppArtisan(options: {
     chiffres = chiffres.slice(2);
   }
 
+  if (!chiffres) return "";
+
   const texte = encodeURIComponent(
     messagePersonnalise ||
       `Bonjour ${nomArtisan}, je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.`
   );
 
-  return `https://wa.me{chiffres}?text=${texte}`;
+  return `https://wa.me${chiffres}?text=${texte}`;
 }
 
 export function genererLienWhatsApp(
