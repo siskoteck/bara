@@ -132,7 +132,7 @@ export default function HomePage() {
           >
             Tout Abidjan
           </Link>
-          {COMMUNES_RAPIDES.map((c) => (
+          {COMMUNES.map((c) => (
             <Link
               key={c}
               href={`/artisans?commune=${encodeURIComponent(c)}`}
