@@ -63,13 +63,6 @@ export default function AdminPage() {
   const [bannieres, setBannieres] = useState<BanniereAdmin[]>([]);
   const [recherche, setRecherche] = useState("");
 
-  // États création d'une bannière
-  const [titreBan, setTitreBan] = useState("");
-  const [descBan, setDescBan] = useState("");
-  const [imageBan, setImageBan] = useState("");
-  const [lienBan, setLienBan] = useState("");
-  const [ajoutBan, setAjoutBan] = useState(false);
-
   useEffect(() => {
     async function verifierEtCharger() {
       const { data } = await supabase.auth.getSession();
@@ -139,62 +132,6 @@ export default function AdminPage() {
     const { error } = await supabase.from("demandes").delete().eq("id", id);
     if (!error) {
       setDemandes((prev) => prev.filter((d) => d.id !== id));
-    }
-  }
-
-  async function handleAjouterBanniere(e: React.FormEvent) {
-    e.preventDefault();
-    if (!titreBan.trim()) return;
-
-    setAjoutBan(true);
-    const { data, error } = await supabase
-      .from("bannieres")
-      .insert([
-        {
-          titre: titreBan.trim(),
-          description: descBan.trim() || null,
-          image_url: imageBan.trim() || null,
-          lien: lienBan.trim() || null,
-          actif: true,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      alert("Erreur lors de l'ajout : " + error.message);
-    } else if (data) {
-      setBannieres((prev) => [data as BanniereAdmin, ...prev]);
-      setTitreBan("");
-      setDescBan("");
-      setImageBan("");
-      setLienBan("");
-    }
-    setAjoutBan(false);
-  }
-
-  async function toggleBanniereActif(
-    id: string | number,
-    statutActuel: boolean
-  ) {
-    const nouveauStatut = !statutActuel;
-    const { error } = await supabase
-      .from("bannieres")
-      .update({ actif: nouveauStatut })
-      .eq("id", id);
-
-    if (!error) {
-      setBannieres((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, actif: nouveauStatut } : b))
-      );
-    }
-  }
-
-  async function supprimerBanniere(id: string | number) {
-    if (!confirm("Supprimer cette bannière publicitaire ?")) return;
-    const { error } = await supabase.from("bannieres").delete().eq("id", id);
-    if (!error) {
-      setBannieres((prev) => prev.filter((b) => b.id !== id));
     }
   }
   if (loading || !autorise) {

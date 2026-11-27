@@ -56,6 +56,7 @@ function ContenuFicheArtisan() {
   const galerieRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
   const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
+  const [maintenant, setMaintenant] = useState<number>(0);
 
   const [auteur, setAuteur] = useState("");
   const [note, setNote] = useState(5);
@@ -72,6 +73,7 @@ function ContenuFicheArtisan() {
         0;
       setAfficherHeaderMobile(pos > 120);
     }
+    setMaintenant(Date.now());
     surDefilement();
     window.addEventListener("scroll", surDefilement, {
       passive: true,
@@ -203,11 +205,11 @@ function ContenuFicheArtisan() {
   }
 
   const estConnecte = artisan.derniere_activite
-    ? Date.now() - new Date(artisan.derniere_activite).getTime() < 15 * 60 * 1000
+    ? maintenant > 0 && maintenant - new Date(artisan.derniere_activite).getTime() < 15 * 60 * 1000
     : false;
 
   const estNouveau = artisan.created_at
-    ? Date.now() - new Date(artisan.created_at).getTime() < 30 * 24 * 60 * 60 * 1000
+    ? maintenant > 0 && maintenant - new Date(artisan.created_at).getTime() < 30 * 24 * 60 * 60 * 1000
     : false;
 
   const moyenneNote =
