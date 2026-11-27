@@ -16,6 +16,8 @@ export const METIERS = [
   "Climatisation / Froid",
   "Réparateur électroménager (frigo, machine...)",
   "Installateur panneaux solaires",
+  "Installateur groupe électrogène / Onduleur",
+  "Installateur caméras & alarmes (Sécurité)",
   "Antenniste / Installateur TV & Canal+",
 
   // Automobile & Transport
@@ -31,7 +33,11 @@ export const METIERS = [
   "Jardinier / Paysagiste",
   "Tapissier / Garnisseur",
   "Cordonnier",
+  "Blanchisseur / Pressing à domicile",
   "Désinsectisation / Dératisation",
+  "Vidange fosse septique / Curage",
+  "Pisciniste / Entretien piscine",
+  "Foreur / Puisatier",
 
   // Mode, Beauté & Services
   "Couturier / Tailleur",
