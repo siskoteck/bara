@@ -20,7 +20,7 @@ export function ArtisanCard({ artisan, urgence = false }: ArtisanCardProps) {
 
   return (
     <div
-      className={`bg-white rounded-3xl border p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between ${
+      className={`animate-bara-fade-up bg-white rounded-3xl border hover:-translate-y-0.5 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between ${
         urgence
           ? "border-red-200 hover:border-red-400"
           : "border-gray-200 hover:border-orange-400"
@@ -109,7 +109,7 @@ export function ArtisanCard({ artisan, urgence = false }: ArtisanCardProps) {
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 text-center text-xs font-extrabold py-2.5 px-3 rounded-xl bg-green-600 hover:bg-green-700 text-white transition shadow-xs"
+            className="flex-1 text-center text-xs font-extrabold py-2.5 px-3 rounded-xl bg-green-600 hover:bg-green-700 hover:scale-[1.02] active:scale-95 text-white transition shadow-xs"
           >
             💬 WhatsApp
           </a>

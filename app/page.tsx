@@ -49,7 +49,7 @@ export default function HomePage() {
     <div className="bg-gray-50/50">
       {/* Hero & Barre de recherche rapide */}
       <section className="bg-gradient-to-br from-orange-600 via-orange-600 to-amber-600 text-white pt-12 pb-16 sm:pt-20 sm:pb-24">
-        <div className="max-w-5xl mx-auto px-4 text-center">
+        <div className="animate-bara-fade-up max-w-5xl mx-auto px-4 text-center">
           <span className="inline-flex items-center gap-1.5 bg-white/15 border border-white/20 text-white text-xs font-extrabold px-3.5 py-1 rounded-full mb-4">
             🇨🇮 DISPONIBLE DANS LES 13 COMMUNES D&apos;ABIDJAN
           </span>
@@ -64,7 +64,7 @@ export default function HomePage() {
           {/* Barre de recherche */}
           <form
             onSubmit={lancerRecherche}
-            className="bg-white p-3 rounded-2xl shadow-xl max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 text-gray-800"
+            className="bg-white p-3 rounded-2xl shadow-xl transition-all duration-300 focus-within:ring-4 focus-within:ring-amber-300/50 max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 text-gray-800"
           >
             <select
               aria-label="Choisir un métier"
@@ -136,7 +136,7 @@ export default function HomePage() {
             <Link
               key={c}
               href={`/artisans?commune=${encodeURIComponent(c)}`}
-              className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600 shrink-0 transition"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:scale-105 active:scale-95 border border-gray-200 text-gray-700 hover:border-orange-400 hover:text-orange-600 shrink-0 transition"
             >
               {c}
             </Link>

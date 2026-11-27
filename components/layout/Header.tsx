@@ -94,7 +94,7 @@ function HeaderContenu() {
             className="flex flex-col items-center justify-center -mt-5"
           >
             <span
-              className={`w-12 h-12 rounded-2xl text-white shadow-lg flex items-center justify-center text-xl font-black border-4 border-white active:scale-95 transition ${
+              className={`animate-bara-sos w-12 h-12 rounded-2xl text-white shadow-lg flex items-center justify-center text-xl font-black border-4 border-white active:scale-95 transition ${
                 estActif("/sos-urgence")
                   ? "bg-red-700"
                   : "bg-red-600 hover:bg-red-700"
