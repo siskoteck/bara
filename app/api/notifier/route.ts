@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, id: data?.id });
   } catch (err: unknown) {
     return NextResponse.json(
-      { error: err?.message || "Erreur serveur." },
+      { error: (err instanceof Error ? err.message : "Erreur serveur.") },
       { status: 500 }
     );
   }
