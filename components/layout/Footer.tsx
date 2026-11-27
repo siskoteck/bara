@@ -87,7 +87,7 @@ export function Footer() {
               vérifié ? Écrivez-nous directement sur WhatsApp.
             </p>
             <a
-              href="https://wa.me"
+              href="https://wa.me/22507249678"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition"

@@ -48,7 +48,7 @@ export default function MentionsLegalesPage() {
           <li>
             <strong>Support WhatsApp :</strong>{" "}
             <a
-              href="https://wa.me"
+              href="https://wa.me/22507249678"
               target="_blank"
               rel="noopener noreferrer"
               className="text-green-700 font-semibold hover:underline"
