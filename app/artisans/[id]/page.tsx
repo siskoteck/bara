@@ -512,7 +512,7 @@ function ContenuFicheArtisan() {
               </div>
 
               {artisan.realisations && artisan.realisations.length > 1 && (
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     aria-label="Défiler réalisations à gauche"
@@ -540,14 +540,19 @@ function ContenuFicheArtisan() {
             {artisan.realisations && artisan.realisations.length > 0 ? (
               <div
                 ref={galerieRef}
-                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory pb-2 scroll-smooth"
+                style={{ WebkitOverflowScrolling: "touch" }}
+                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth touch-pan-x select-none"
               >
                 {artisan.realisations.map((photo, index) => (
-                  <button
+                  <div
                     key={photo + index}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setPhotoZoomIndex(index)}
-                    className="group relative snap-start shrink-0 w-56 sm:w-64 rounded-2xl overflow-hidden border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setPhotoZoomIndex(index);
+                    }}
+                    className="group relative snap-start shrink-0 w-56 sm:w-64 rounded-2xl overflow-hidden border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs cursor-zoom-in touch-pan-x"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -562,7 +567,7 @@ function ContenuFicheArtisan() {
                     <span className="absolute bottom-2.5 right-2.5 bg-black/70 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
                       🔍 Agrandir
                     </span>
-                  </button>
+                  </div>
                 ))}
               </div>
             ) : (
