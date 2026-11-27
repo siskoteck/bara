@@ -25,11 +25,7 @@ function lienWhatsApp(demande: Demande) {
   const message = `Bonjour, je suis artisan sur BARA. J'ai vu votre demande « ${
     demande.titre ?? demande.metier ?? "travaux"
   } » et je peux vous aider.`;
-  return `https://wa.me/${chiffres}?text=${encodeURIComponent(message)}`;
-}
-
-function dateCourte(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", {
+  return `https://whatsapp.com"fr-FR", {
     day: "numeric",
     month: "short",
   });

@@ -113,7 +113,7 @@ export default function MesDemandesPage() {
       : demande.commune;
     const texte = `Bonjour, je suis artisan (${demande.metier}) sur BARA. J'ai vu votre demande à ${lieu} et je suis disponible pour intervenir.`;
 
-    return "https://wa.me/" + chiffres + "?text=" + encodeURIComponent(texte);
+    return "https://whatsapp.com" + chiffres + "?text=" + encodeURIComponent(texte);
   }
 
   if (loading) {
