@@ -1,15 +1,13 @@
-﻿import { GrilleArtisansSkeleton } from "@/components/shared/BaraSkeletons";
-
-export default function LoadingBaraGlobal() {
+export default function GlobalLoading() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="animate-pulse space-y-3 max-w-xl">
-        <div className="h-5 bg-orange-100 rounded-full w-36" />
-        <div className="h-8 bg-gray-200 rounded-xl w-3/4" />
-        <div className="h-4 bg-gray-100 rounded-lg w-1/2" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6 animate-pulse">
+      <div className="h-8 w-64 bg-gray-200 rounded-xl" />
+      <div className="h-4 w-96 max-w-full bg-gray-200 rounded-lg" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+        {[1, 2, 3, 4, 5, 6].map((n) => (
+          <div key={n} className="h-48 bg-white rounded-3xl border border-gray-200 p-5" />
+        ))}
       </div>
-
-      <GrilleArtisansSkeleton count={6} />
     </div>
   );
 }
