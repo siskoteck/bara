@@ -101,4 +101,47 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
       { prestation: "Dépannage batterie / démarrage sur place", prixMin: "5 000", prixMax: "15 000", unite: "Intervention" },
     ],
   },
+  {
+    metier: "Caméras & Sécurité",
+    icone: "📹",
+    deplacementMoyen: "5 000 FCFA (étude gratuite sur chantier)",
+    prestations: [
+      { prestation: "Installation caméra de surveillance IP / Wi-Fi", prixMin: "10 000", prixMax: "20 000", unite: "Par caméra" },
+      { prestation: "Kit complet 4 caméras + enregistreur DVR", prixMin: "120 000", prixMax: "250 000", unite: "Fourni posé" },
+      { prestation: "Pose interphone vidéo / sonnette connectée", prixMin: "15 000", prixMax: "35 000", unite: "Main-d'œuvre" },
+      { prestation: "Installation clôture électrique de sécurité", prixMin: "4 500", prixMax: "8 000", unite: "Par mètre linéaire" },
+    ],
+  },
+  {
+    metier: "Panneaux Solaires & Énergie",
+    icone: "☀️",
+    deplacementMoyen: "5 000 FCFA (diagnostic gratuit)",
+    prestations: [
+      { prestation: "Kit solaire éclairage + TV + ventilateur", prixMin: "180 000", prixMax: "350 000", unite: "Fourni posé" },
+      { prestation: "Installation onduleur hybride + batteries", prixMin: "35 000", prixMax: "80 000", unite: "Main-d'œuvre" },
+      { prestation: "Entretien et nettoyage panneaux solaires", prixMin: "10 000", prixMax: "25 000", unite: "Forfait" },
+      { prestation: "Raccordement inverseur groupe électrogène", prixMin: "20 000", prixMax: "45 000", unite: "Main-d'œuvre" },
+    ],
+  },
+  {
+    metier: "Vidange Fosse Septique & Curage",
+    icone: "🚛",
+    deplacementMoyen: "Inclus dans le forfait camion",
+    prestations: [
+      { prestation: "Vidange fosse septique maison (camion hydrocureur)", prixMin: "35 000", prixMax: "65 000", unite: "Par voyage" },
+      { prestation: "Curage et débouchage regard / canalisation", prixMin: "15 000", prixMax: "30 000", unite: "Intervention" },
+      { prestation: "Désinsectisation & dératisation complète (3D)", prixMin: "20 000", prixMax: "45 000", unite: "Maison / Appart." },
+    ],
+  },
+  {
+    metier: "Jardinier & Entretien Maison",
+    icone: "🌿",
+    deplacementMoyen: "3 000 FCFA",
+    prestations: [
+      { prestation: "Tonte de pelouse et taille de haies", prixMin: "10 000", prixMax: "25 000", unite: "Par passage" },
+      { prestation: "Entretien mensuel jardin (2 passages/mois)", prixMin: "25 000", prixMax: "50 000", unite: "Par mois" },
+      { prestation: "Nettoyage complet fin de chantier", prixMin: "30 000", prixMax: "80 000", unite: "Forfait" },
+      { prestation: "Entretien et traitement eau de piscine", prixMin: "25 000", prixMax: "50 000", unite: "Par mois" },
+    ],
+  },
 ];
