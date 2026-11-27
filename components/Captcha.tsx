@@ -38,19 +38,21 @@ function chargerScript(): Promise<void> {
 }
 
 type Props = {
-  onToken: (token: string | null) => void;
+  onToken?: (token: string | null) => void;
+  onVerify?: (token: string | null) => void;
   // Augmentez cette valeur pour relancer la vérification (un jeton ne sert qu'une fois)
   resetSignal?: number;
 };
 
-export default function Captcha({ onToken, resetSignal = 0 }: Props) {
+export default function Captcha({ onToken, onVerify, resetSignal = 0 }: Props) {
+  const callback = onToken || onVerify || (() => {});
   const conteneur = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
-  const onTokenRef = useRef(onToken);
+  const onTokenRef = useRef(callback);
 
   useEffect(() => {
-    onTokenRef.current = onToken;
-  }, [onToken]);
+    onTokenRef.current = callback;
+  }, [callback]);
 
   useEffect(() => {
     if (!SITE_KEY) return;
