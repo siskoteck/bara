@@ -66,9 +66,9 @@ export function AvatarUpload({
       if (updateError) throw updateError;
 
       onUpload(nouvelleUrl);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur upload avatar:", err);
-      setErreur(err.message || "Erreur lors de l'envoi de la photo.");
+      setErreur((err instanceof Error ? err.message : "Erreur inattendue") || "Erreur lors de l'envoi de la photo.");
     } finally {
       setUploading(false);
     }

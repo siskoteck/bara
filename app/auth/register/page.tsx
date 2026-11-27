@@ -83,8 +83,8 @@ function FormulaireInscription() {
         router.push("/");
       }
       router.refresh();
-    } catch (err: any) {
-      setErreur(err.message || "Erreur lors de l'inscription.");
+    } catch (err: unknown) {
+      setErreur((err instanceof Error ? err.message : "Erreur inattendue") || "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
     }

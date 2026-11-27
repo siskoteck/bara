@@ -46,9 +46,9 @@ export default function ReinitialiserPage() {
       await supabase.auth.signOut();
       alert("Mot de passe modifié. Vous pouvez vous connecter.");
       router.push("/auth/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur mise à jour:", err);
-      setError(err.message || "Une erreur est survenue");
+      setError((err instanceof Error ? err.message : "Erreur inattendue") || "Une erreur est survenue");
     } finally {
       setLoading(false);
     }

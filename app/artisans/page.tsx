@@ -35,41 +35,36 @@ function ListeArtisansContenu() {
   const [recherche, setRecherche] = useState("");
   const [uniquementDisponibles, setUniquementDisponibles] = useState(false);
 
-  useEffect(() => {
-    setFiltreMetier(metierUrl);
-  }, [metierUrl]);
+  const [cleRechargement, setCleRechargement] = useState(0);
+  const chargerDonnees = useCallback(() => setCleRechargement((c) => c + 1), []);
 
   useEffect(() => {
-    setFiltreCommune(communeUrl);
-  }, [communeUrl]);
-
-  const chargerDonnees = useCallback(async () => {
-    setLoading(true);
-    setErreurChargement(false);
-
-    const [resSession, resArtisans] = await Promise.all([
-      supabase.auth.getSession(),
-      supabase
-        .from("artisans")
-        .select("*")
-        .order("verifie", { ascending: false })
-        .order("created_at", { ascending: false }),
-    ]);
-
-    setUtilisateurConnecte(Boolean(resSession.data.session?.user));
-
-    if (resArtisans.error) {
-      setErreurChargement(true);
-    } else if (resArtisans.data) {
-      setArtisans(resArtisans.data as Artisan[]);
+    let actif = true;
+    async function executer() {
+      setLoading(true);
+      setErreurChargement(false);
+      const [resSession, resArtisans] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase
+          .from("artisans")
+          .select("*")
+          .order("verifie", { ascending: false })
+          .order("created_at", { ascending: false }),
+      ]);
+      if (!actif) return;
+      setUtilisateurConnecte(Boolean(resSession.data.session?.user));
+      if (resArtisans.error) {
+        setErreurChargement(true);
+      } else if (resArtisans.data) {
+        setArtisans(resArtisans.data as Artisan[]);
+      }
+      setLoading(false);
     }
-
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    chargerDonnees();
-  }, [chargerDonnees]);
+    executer();
+    return () => {
+      actif = false;
+    };
+  }, [cleRechargement]);
 
   const artisansFiltres = artisans.filter((a) => {
     const matchMetier =
@@ -235,6 +230,12 @@ function ListeArtisansContenu() {
   );
 }
 
+function ArtisansPageAvecCle() {
+  const sp = useSearchParams();
+  const cle = `${sp.get("metier") || "Tous"}-${sp.get("commune") || "Toutes"}`;
+  return <ListeArtisansContenu key={cle} />;
+}
+
 export default function ArtisansPage() {
   return (
     <Suspense
@@ -244,7 +245,7 @@ export default function ArtisansPage() {
         </div>
       }
     >
-      <ListeArtisansContenu />
+      <ArtisansPageAvecCle />
     </Suspense>
   );
 }

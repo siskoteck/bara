@@ -43,9 +43,9 @@ export default function MotDePasseOubliePage() {
       );
       if (resetError) throw resetError;
       setEnvoye(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur réinitialisation:", err);
-      const msg: string = err.message || "";
+      const msg: string = (err instanceof Error ? err.message : "Erreur inattendue") || "";
       if (msg.toLowerCase().includes("captcha")) {
         setError("Vérification de sécurité échouée. Réessayez.");
       } else {
