@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  PhoneCall, MessageCircle, Siren, ShieldAlert,
+  PhoneCall, Siren, ShieldAlert,
   Flame, HeartPulse, Zap, Droplets,
 } from "lucide-react";
 import { COMMUNES } from "@/lib/constantes";
