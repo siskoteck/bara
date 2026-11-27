@@ -236,7 +236,7 @@ function ContenuFicheArtisan() {
   return (
     <div className="pb-24 md:pb-12">
       {/* Header fixe au défilement */}
-      {afficherHeaderMobile && (
+      {afficherHeaderMobile && photoZoomIndex === null && (
         <div
           style={{ zIndex: 9999 }}
           className="fixed top-0 inset-x-0 bg-white/95 backdrop-blur-md border-b border-orange-200 px-4 py-2.5 shadow-lg"
@@ -802,7 +802,7 @@ function ContenuFicheArtisan() {
               }
               touchStartX.current = null;
             }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center p-4"
           >
             <button
               type="button"
@@ -863,7 +863,7 @@ function ContenuFicheArtisan() {
           </div>
         )}
 
-      <div className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-white border-t border-gray-200 p-3 shadow-lg">
+      <div className={`fixed bottom-0 inset-x-0 z-30 md:hidden bg-white border-t border-gray-200 p-3 shadow-lg ${photoZoomIndex !== null ? "hidden" : ""}`}>
         {utilisateurConnecte && lienWhatsApp ? (
           <a
             href={lienWhatsApp}
