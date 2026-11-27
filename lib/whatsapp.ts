@@ -1,4 +1,9 @@
-export function construireLienWhatsAppArtisan(options) {
+export function construireLienWhatsAppArtisan(options: {
+  whatsappLien?: string | null;
+  telephone?: string | null;
+  nomArtisan: string;
+  messagePersonnalise?: string;
+}): string {
   const { whatsappLien, telephone, nomArtisan, messagePersonnalise } = options;
 
   const lienQr = (whatsappLien || "").trim();
@@ -20,13 +25,22 @@ export function construireLienWhatsAppArtisan(options) {
 
   if (!chiffres) return "";
 
-  const brut = messagePersonnalise || ("Bonjour " + nomArtisan + ", je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.");
+  const brut =
+    messagePersonnalise ||
+    "Bonjour " +
+      nomArtisan +
+      ", je viens de BARA Abidjan et j'aimerais vous contacter pour un travail.";
   const propre = brut.replace(/[()]/g, "");
 
   return "https://wa.me" + chiffres + "?text=" + encodeURIComponent(propre);
 }
 
-export function genererLienWhatsApp(telephone, nomArtisan, messagePersonnalise, whatsappLien) {
+export function genererLienWhatsApp(
+  telephone: string | null | undefined,
+  nomArtisan?: string,
+  messagePersonnalise?: string,
+  whatsappLien?: string | null
+): string {
   return construireLienWhatsAppArtisan({
     whatsappLien,
     telephone,
