@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -52,7 +52,8 @@ function ContenuFicheArtisan() {
   const [utilisateurConnecte, setUtilisateurConnecte] = useState(false);
   const [loading, setLoading] = useState(true);
   const [erreurChargement, setErreurChargement] = useState("");
-  const [photoZoom, setPhotoZoom] = useState<string | null>(null);
+  const [photoZoomIndex, setPhotoZoomIndex] = useState<number | null>(null);
+  const galerieRef = useRef<HTMLDivElement | null>(null);
   const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
 
   const [auteur, setAuteur] = useState("");
@@ -498,26 +499,67 @@ function ContenuFicheArtisan() {
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              Réalisations ({artisan.realisations?.length || 0})
-            </h2>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Réalisations ({artisan.realisations?.length || 0})
+                </h2>
+                {artisan.realisations && artisan.realisations.length > 1 && (
+                  <p className="text-[11px] text-gray-500">
+                    Faites glisser horizontalement ou utilisez les flèches pour parcourir les chantiers
+                  </p>
+                )}
+              </div>
+
+              {artisan.realisations && artisan.realisations.length > 1 && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    aria-label="Défiler réalisations à gauche"
+                    onClick={() =>
+                      galerieRef.current?.scrollBy({ left: -280, behavior: "smooth" })
+                    }
+                    className="w-8 h-8 rounded-full border border-gray-300 bg-white hover:bg-orange-50 hover:border-orange-400 text-gray-700 font-black flex items-center justify-center transition"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Défiler réalisations à droite"
+                    onClick={() =>
+                      galerieRef.current?.scrollBy({ left: 280, behavior: "smooth" })
+                    }
+                    className="w-8 h-8 rounded-full border border-gray-300 bg-white hover:bg-orange-50 hover:border-orange-400 text-gray-700 font-black flex items-center justify-center transition"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
+
             {artisan.realisations && artisan.realisations.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div
+                ref={galerieRef}
+                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory pb-2 scroll-smooth"
+              >
                 {artisan.realisations.map((photo, index) => (
                   <button
                     key={photo + index}
                     type="button"
-                    onClick={() => setPhotoZoom(photo)}
-                    className="group relative rounded-2xl overflow-hidden border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    onClick={() => setPhotoZoomIndex(index)}
+                    className="group relative snap-start shrink-0 w-56 sm:w-64 rounded-2xl overflow-hidden border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photo}
                       alt={`Réalisation ${index + 1} de ${artisan.name}`}
                       loading="lazy"
-                      className="w-full h-40 object-cover group-hover:scale-105 transition duration-300"
+                      className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />
-                    <span className="absolute bottom-2 right-2 bg-black/65 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                    <span className="absolute top-2.5 left-2.5 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {index + 1}/{artisan.realisations?.length}
+                    </span>
+                    <span className="absolute bottom-2.5 right-2.5 bg-black/70 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
                       🔍 Agrandir
                     </span>
                   </button>
@@ -732,28 +774,73 @@ function ContenuFicheArtisan() {
         )}
       </div>
 
-      {photoZoom && (
-        <div
-          onClick={() => setPhotoZoom(null)}
-          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
-        >
-          <div className="relative max-w-3xl w-full">
+      {photoZoomIndex !== null &&
+        artisan.realisations &&
+        artisan.realisations[photoZoomIndex] && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setPhotoZoomIndex(null)}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          >
             <button
               type="button"
-              onClick={() => setPhotoZoom(null)}
-              className="absolute -top-10 right-0 text-white text-sm font-bold bg-white/15 px-3 py-1 rounded-full"
+              onClick={() => setPhotoZoomIndex(null)}
+              aria-label="Fermer l'aperçu"
+              className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-xl font-black flex items-center justify-center transition"
             >
-              ✕ Fermer
+              ✕
             </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photoZoom}
-              alt="Réalisation agrandie"
-              className="w-full max-h-[80vh] object-contain rounded-2xl"
-            />
+
+            {artisan.realisations.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const total = artisan.realisations!.length;
+                    setPhotoZoomIndex((prev) =>
+                      prev === null ? 0 : (prev - 1 + total) % total
+                    );
+                  }}
+                  aria-label="Réalisation précédente"
+                  className="absolute left-3 sm:left-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-2xl font-black flex items-center justify-center transition"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const total = artisan.realisations!.length;
+                    setPhotoZoomIndex((prev) =>
+                      prev === null ? 0 : (prev + 1) % total
+                    );
+                  }}
+                  aria-label="Réalisation suivante"
+                  className="absolute right-3 sm:right-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/35 text-white text-2xl font-black flex items-center justify-center transition"
+                >
+                  ›
+                </button>
+              </>
+            )}
+
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-4xl max-h-[88vh] flex flex-col items-center gap-3"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={artisan.realisations[photoZoomIndex]}
+                alt={`Réalisation ${photoZoomIndex + 1} de ${artisan.name}`}
+                className="max-h-[78vh] max-w-full object-contain rounded-2xl shadow-2xl"
+              />
+              <span className="text-xs font-bold text-gray-200 bg-white/15 px-3.5 py-1 rounded-full">
+                Réalisation {photoZoomIndex + 1} / {artisan.realisations.length} • Touchez à côté pour fermer
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       <div className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-white border-t border-gray-200 p-3 shadow-lg">
         {utilisateurConnecte && lienWhatsApp ? (
