@@ -54,6 +54,7 @@ function ContenuFicheArtisan() {
   const [erreurChargement, setErreurChargement] = useState("");
   const [photoZoomIndex, setPhotoZoomIndex] = useState<number | null>(null);
   const galerieRef = useRef<HTMLDivElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
   const [afficherHeaderMobile, setAfficherHeaderMobile] = useState(false);
 
   const [auteur, setAuteur] = useState("");
@@ -541,7 +542,7 @@ function ContenuFicheArtisan() {
               <div
                 ref={galerieRef}
                 style={{ WebkitOverflowScrolling: "touch" }}
-                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth touch-pan-x select-none"
+                className="flex gap-3.5 overflow-x-auto sm:snap-x sm:snap-mandatory pb-3 touch-pan-x select-none"
               >
                 {artisan.realisations.map((photo, index) => (
                   <div
@@ -786,6 +787,21 @@ function ContenuFicheArtisan() {
             role="dialog"
             aria-modal="true"
             onClick={() => setPhotoZoomIndex(null)}
+            onTouchStart={(e) => {
+              touchStartX.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null || !artisan.realisations || artisan.realisations.length <= 1) return;
+              const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+              const diff = touchStartX.current - endX;
+              const total = artisan.realisations.length;
+              if (Math.abs(diff) > 45) {
+                setPhotoZoomIndex((prev) =>
+                  prev === null ? 0 : diff > 0 ? (prev + 1) % total : (prev - 1 + total) % total
+                );
+              }
+              touchStartX.current = null;
+            }}
             className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
           >
             <button
