@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { construireLienWhatsAppArtisan } from "@/lib/whatsapp";
+import { genererLienWhatsAppArtisan8Chiffres } from "@/lib/utils";
 import { PartageSecuriteProche } from "@/components/PartageSecuriteProche";
 import { BoutonRecommander } from "@/components/BoutonRecommander";
 import { ArtisanCard } from "@/components/artisans/ArtisanCard";
@@ -226,6 +227,10 @@ function ContenuFicheArtisan() {
         .slice(0, 2)
     : "A";
 
+  const lienWhatsApp8Chiffres = artisan.telephone
+    ? genererLienWhatsAppArtisan8Chiffres(artisan.telephone)
+    : "";
+
   const lienWhatsApp =
     artisan.whatsapp_lien || artisan.telephone
       ? construireLienWhatsAppArtisan({
@@ -404,6 +409,19 @@ function ContenuFicheArtisan() {
                         📋 Demander un devis
                       </Link>
                     </div>
+                      {lienWhatsApp8Chiffres && lienWhatsApp8Chiffres !== lienWhatsApp && (
+                        <p className="text-[11px] text-gray-500">
+                          Le lien WhatsApp ne s&apos;ouvre pas ?{" "}
+                          <a
+                            href={lienWhatsApp8Chiffres}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-700 font-semibold underline hover:text-green-800"
+                          >
+                            Essayer l&apos;ancien format WhatsApp 8 chiffres
+                          </a>
+                        </p>
+                      )}
                     <p className="text-[11px] text-gray-500">
                       💡 Astuce : Dites-lui que vous venez de <strong>BARA</strong> lors de votre échange sur WhatsApp.
                     </p>
