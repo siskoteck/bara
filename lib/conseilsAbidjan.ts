@@ -47,7 +47,7 @@ export const CONSEILS_ABIDJAN: ArticleConseil[] = [
     slug: "entretien-climatiseur-split-chaleur-abidjan",
     titre: "Climatiseur qui coule ou refroidit mal : les réflexes avant d'appeler un technicien",
     categorie: "Froid & Climatisation",
-    metierLie: "Frigoriste / Climatisation",
+    metierLie: "Climatisation / Froid",
     icone: "❄️",
     tempsLecture: "3 min",
     resume:
@@ -133,7 +133,7 @@ export const CONSEILS_ABIDJAN: ArticleConseil[] = [
     slug: "eviter-humidite-salpetre-murs-peinture-abidjan",
     titre: "Peinture qui cloque et humidité sur les murs : comment traiter durablement ?",
     categorie: "Peinture & Rénovation",
-    metierLie: "Peintre",
+    metierLie: "Peintre en bâtiment",
     icone: "🎨",
     tempsLecture: "3 min",
     resume:
@@ -162,7 +162,7 @@ export const CONSEILS_ABIDJAN: ArticleConseil[] = [
     slug: "entretien-voiture-embouteillages-chaleur-abidjan",
     titre: "Embouteillages et chaleur à Abidjan : 4 contrôles vitaux pour votre voiture",
     categorie: "Mécanique Auto",
-    metierLie: "Mécanicien auto / moto",
+    metierLie: "Mécanicien auto",
     icone: "🚗",
     tempsLecture: "4 min",
     resume:
@@ -191,7 +191,7 @@ export const CONSEILS_ABIDJAN: ArticleConseil[] = [
     slug: "proteger-meubles-bois-termites-humidite-abidjan",
     titre: "Comment protéger vos meubles et portes en bois contre les termites et l'humidité ?",
     categorie: "Menuiserie & Bois",
-    metierLie: "Menuisier",
+    metierLie: "Menuisier bois",
     icone: "🪚",
     tempsLecture: "3 min",
     resume:

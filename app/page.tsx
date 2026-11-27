@@ -15,7 +15,7 @@ const CATEGORIES_POPULAIRES = [
   { nom: "Maçon", icone: "🧱", desc: "Construction, rénovation, dalles" },
   { nom: "Peintre", icone: "🎨", desc: "Intérieur, façade, décoration" },
   { nom: "Carreleur", icone: "📐", desc: "Pose sol, mur, salle de bain" },
-  { nom: "Mécanicien", icone: "🔧", desc: "Diagnostic, entretien auto" },
+  { nom: "Mécanicien auto", icone: "🔧", desc: "Diagnostic, entretien auto" },
 ];
 
 const COMMUNES_RAPIDES = [

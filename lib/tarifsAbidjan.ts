@@ -36,7 +36,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Frigoriste / Climatisation",
+    metier: "Climatisation / Froid",
     icone: "❄️",
     deplacementMoyen: "3 000 – 5 000 FCFA",
     prestations: [
@@ -47,7 +47,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Peintre",
+    metier: "Peintre en bâtiment",
     icone: "🎨",
     deplacementMoyen: "Gratuit sur devis",
     prestations: [
@@ -58,7 +58,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Menuisier",
+    metier: "Menuisier bois",
     icone: "🪚",
     deplacementMoyen: "3 000 – 5 000 FCFA",
     prestations: [
@@ -80,7 +80,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Serrurier / Soudeur",
+    metier: "Serrurier / Ferronnier / Soudeur",
     icone: "🔑",
     deplacementMoyen: "3 000 – 5 000 FCFA",
     prestations: [
@@ -91,7 +91,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Mécanicien auto / moto",
+    metier: "Mécanicien auto",
     icone: "🚗",
     deplacementMoyen: "5 000 FCFA (dépannage)",
     prestations: [
@@ -102,7 +102,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Caméras & Sécurité",
+    metier: "Installateur caméras & alarmes (Sécurité)",
     icone: "📹",
     deplacementMoyen: "5 000 FCFA (étude gratuite sur chantier)",
     prestations: [
@@ -113,7 +113,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Panneaux Solaires & Énergie",
+    metier: "Installateur panneaux solaires",
     icone: "☀️",
     deplacementMoyen: "5 000 FCFA (diagnostic gratuit)",
     prestations: [
@@ -124,7 +124,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Vidange Fosse Septique & Curage",
+    metier: "Vidange fosse septique / Curage",
     icone: "🚛",
     deplacementMoyen: "Inclus dans le forfait camion",
     prestations: [
@@ -134,7 +134,7 @@ export const GUIDE_TARIFS_ABIDJAN: GuideTarifMetier[] = [
     ],
   },
   {
-    metier: "Jardinier & Entretien Maison",
+    metier: "Jardinier / Paysagiste",
     icone: "🌿",
     deplacementMoyen: "3 000 FCFA",
     prestations: [
